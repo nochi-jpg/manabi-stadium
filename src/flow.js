@@ -4,7 +4,7 @@
   // ・対戦の ルール・画面は まなびバトルと 同じ（vsTurn などを そのまま使う）
   // ・まなびバトルの セーブ（manabi_battle_save）には さわらない
   // =====================================================================
-  const STD_VERSION = '0.3.1';
+  const STD_VERSION = '0.3.2';
   const STDX = window.STD || { on: false, ok: () => false };
   const stdS = () => ({ stadium: true, owned: Object.keys(D.ITEM), fav: [], sel: { tempo: 'fast' }, debug: null, pname: '先生', qs: {}, st: {} });
   window.STD_SE = k => se(k);
@@ -80,7 +80,7 @@
         V.bt = { vs: true, bgVs: pick(Object.keys(D.BOSSES)), cfg: { P: vsCfg(V.prof.a, V.picks.a), B: vsCfg(V.prof.b, V.picks.b) }, snap: null, turn: 1, firstId: null, acts: {}, used: [], phase: 'turn', result: null };
         BT = hydrate(V.bt); BT.snap = dynAll(); V.phase = 'battle'; saveVs();
         if (STDX.ok()) {
-          render('<div></div>', 'btl');
+          render('<div></div>', 'btl').style.background = 'transparent';
           await STDX.intro(stdIntroData());
           battleScreen(); $('#turn').textContent = '🆚 対戦';
         } else {

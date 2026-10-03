@@ -125,3 +125,5 @@
 /* アイテムえらびの「けってい」は 右下（電子黒板の上は 子どもの手が とどかない） */
 .scr.res .prog #ok{position:fixed;right:24px;bottom:20px;z-index:5;font-size:34px!important;padding:16px 54px!important}
 .scr.res .prog ~ .panel{bottom:110px!important}
+/* まなびバトルの「対戦画面の背景を ぼかして暗く」を 消す（3Dスタジアムが ぼやけて暗くなるため） */
+.scr.btl::before{display:none!important}
