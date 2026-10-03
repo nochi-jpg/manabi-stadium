@@ -1,0 +1,72 @@
+/* ===== まなびスタジアム：まなびバトルの見た目の上に かさねる ===== */
+#stage{background:#05071a}
+#stdgl{position:absolute;inset:0;z-index:0}
+#stdgl canvas{position:absolute;inset:0;width:1280px!important;height:720px!important}
+#app{z-index:1}
+#stdfx{position:absolute;inset:0;width:1280px;height:720px;z-index:40;pointer-events:none}
+#stdui{position:absolute;inset:0;z-index:50;pointer-events:none;font-family:var(--f)}
+#stdui button{pointer-events:auto}
+#stdflash{position:absolute;inset:0;opacity:0;background:#fff}
+#stdfps{position:absolute;right:8px;bottom:4px;z-index:60;color:#9f9;font:14px monospace;pointer-events:none}
+.no3d #stdgl{display:none}
+/* シネマの黒帯 */
+#stdui::before,#stdui::after{content:"";position:absolute;left:0;right:0;height:0;background:#000;transition:height .6s}
+#stdui::before{top:0}#stdui::after{bottom:0}
+#stdui.letter::before,#stdui.letter::after{height:56px}
+.std-skip{position:absolute;right:18px;top:8px;z-index:3;font-size:18px!important;padding:6px 16px!important;opacity:.8}
+/* 実況テロップ */
+.std-telop{position:absolute;left:150px;right:150px;bottom:20px;height:78px;border-radius:18px;background:linear-gradient(180deg,rgba(15,25,70,.94),rgba(30,15,60,.94));border:4px solid #ffe066;display:flex;align-items:center;gap:20px;padding:0 24px;opacity:0;transform:translateY(30px);transition:.35s;z-index:2}
+.std-telop.on{opacity:1;transform:none}
+.std-telop span{flex:none;background:#ff6b6b;color:#fff;font-size:19px;padding:5px 10px;border-radius:10px}
+.std-telop b{color:#fff;font-size:34px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-shadow:0 3px 0 #000}
+/* 入場の しょうかいカード */
+.std-card{position:absolute;top:74px;width:430px;padding:16px 20px 14px;border-radius:22px;background:linear-gradient(160deg,rgba(14,22,60,.93),rgba(40,18,70,.93));border:4px solid #74c0fc;color:#fff;box-shadow:0 10px 30px rgba(0,0,0,.5);transition:transform .5s cubic-bezier(.2,.9,.2,1),opacity .4s;opacity:0}
+.std-card.a{left:24px;transform:translateX(-520px)}
+.std-card.b{right:24px;transform:translateX(520px);border-color:#ff8787}
+.std-card.on{transform:none;opacity:1}
+.sc-who{display:inline-block;font-size:18px;padding:3px 14px;border-radius:999px;background:#1c7ed6;color:#fff}
+.std-card.b .sc-who{background:#e03131}
+.sc-pn{font-size:38px;font-weight:900;margin-top:4px;text-shadow:0 3px 0 #000;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sc-ttl{min-height:6px;margin:2px 0}
+.sc-nm{font-size:28px;font-weight:900;color:#ffe066}.sc-nm span{font-size:18px;color:#cfd8ff;margin-left:6px}
+.sc-hp{font-size:18px;color:#cfd8ff;margin:2px 0 8px}.sc-hp b{color:#fff;font-size:22px}
+.sc-sts{display:grid;gap:5px}
+.sc-st{display:grid;grid-template-columns:52px 1fr 54px;align-items:center;gap:8px;font-size:18px}
+.sc-st i{height:14px;border-radius:7px;background:rgba(255,255,255,.15);overflow:hidden}
+.sc-st b{display:block;height:100%;border-radius:7px;animation:scbar 1s .3s both}
+@keyframes scbar{from{width:0!important}}
+.sc-st em{font-style:normal;text-align:right;font-size:20px}
+.sc-its{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-top:10px}
+.sc-it{position:relative;height:52px;perspective:600px}
+.sc-fc,.sc-bk{position:absolute;inset:0;border-radius:12px;display:flex;align-items:center;gap:6px;padding:0 8px;backface-visibility:hidden;transition:transform .4s}
+.sc-fc{background:linear-gradient(135deg,#5f3dc4,#1c7ed6);justify-content:center;font-size:30px;font-weight:900;border:2px solid #fff}
+.sc-bk{background:rgba(255,255,255,.95);color:#23305a;transform:rotateY(180deg);font-size:28px}
+.sc-bk b{font-size:16px;line-height:1.15}
+.sc-bk .art img{width:34px;height:34px}
+.sc-it.open .sc-fc{transform:rotateY(-180deg)}.sc-it.open .sc-bk{transform:none}
+.sc-none{grid-column:1/-1;font-size:18px;opacity:.7}
+/* にらみあい */
+.std-vs{position:absolute;left:0;right:0;top:470px;display:flex;align-items:center;justify-content:center;gap:40px;opacity:0;transform:scale(1.6);transition:.35s cubic-bezier(.2,.9,.2,1)}
+.std-vs.on{opacity:1;transform:none}
+.std-vs .sv-a,.std-vs .sv-b{width:380px;font-size:40px;font-weight:900;color:#fff;text-shadow:0 4px 0 #000;display:flex;flex-direction:column}
+.std-vs .sv-a{text-align:right;color:#a5d8ff}.std-vs .sv-b{color:#ffc9c9}
+.std-vs small{font-size:26px;color:#ffe066}
+.std-vs .sv-x{font-size:120px;font-weight:900;font-style:italic;color:#ffe066;-webkit-text-stroke:6px #b5179e;paint-order:stroke}
+.std-go{position:absolute;left:50%;top:44%;transform:translate(-50%,-50%);font-size:150px;font-weight:900;color:#fff;-webkit-text-stroke:10px #e03131;paint-order:stroke;white-space:nowrap;animation:stdgo 1.5s forwards}
+@keyframes stdgo{0%{transform:translate(-50%,-50%) scale(3);opacity:0}15%{transform:translate(-50%,-50%) scale(.92);opacity:1}25%{transform:translate(-50%,-50%) scale(1.04)}80%{transform:translate(-50%,-50%) scale(1);opacity:1}100%{transform:translate(-50%,-50%) scale(1.3);opacity:0}}
+/* タイトル */
+.std-title{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px}
+.st-logo{font-size:130px;font-weight:900;color:#fff;-webkit-text-stroke:10px #3b1d8f;paint-order:stroke;line-height:1;text-align:center;filter:drop-shadow(0 8px 0 rgba(0,0,0,.35))}
+.st-logo small{display:block;font-size:64px;color:#ffe066}
+.st-sub{font-size:30px;color:#fff;text-shadow:0 3px 0 #000;margin-bottom:16px}
+.st-mode{font-size:40px!important;padding:16px 60px!important}
+.st-cred{font-size:18px!important}
+.st-ver{position:absolute;bottom:10px;font-size:15px;color:rgba(255,255,255,.75);text-shadow:0 2px 0 #000}
+/* 勝利 */
+.std-win{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;padding-bottom:26px;gap:8px;opacity:0;transition:opacity .6s}
+.std-win.on{opacity:1}
+.sw-head{font-size:52px;font-weight:900;color:#ffe066;-webkit-text-stroke:6px #7c2d12;paint-order:stroke;text-align:center}
+.sw-nm{font-size:30px;color:#fff;text-shadow:0 3px 0 #000}
+.sw-hp{font-size:18px;color:#fff;background:rgba(0,0,0,.5);padding:4px 16px;border-radius:10px}
+.sw-btns{display:flex;gap:16px;margin-top:6px}
+.sw-btns button{font-size:24px!important;padding:12px 22px!important}

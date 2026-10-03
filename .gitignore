@@ -2,3 +2,5 @@
 *.html
 !sample/template.html
 *.zip
+dist/
+tools/_shots/
