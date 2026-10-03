@@ -51,13 +51,14 @@
 .std-vs .sv-a,.std-vs .sv-b{width:380px;font-size:40px;font-weight:900;color:#fff;text-shadow:0 4px 0 #000;display:flex;flex-direction:column}
 .std-vs .sv-a{text-align:right;color:#a5d8ff}.std-vs .sv-b{color:#ffc9c9}
 .std-vs small{font-size:26px;color:#ffe066}
-.std-vs .sv-x{font-size:120px;font-weight:900;font-style:italic;color:#ffe066;-webkit-text-stroke:6px #b5179e;paint-order:stroke}
-.std-go{position:absolute;left:50%;top:44%;transform:translate(-50%,-50%);font-size:150px;font-weight:900;color:#fff;-webkit-text-stroke:10px #e03131;paint-order:stroke;white-space:nowrap;animation:stdgo 1.5s forwards}
+.std-vs .sv-x{font-size:128px}
+.std-go{position:absolute;left:50%;top:44%;transform:translate(-50%,-50%);font-size:150px;white-space:nowrap;animation:stdgo 1.5s forwards}
 @keyframes stdgo{0%{transform:translate(-50%,-50%) scale(3);opacity:0}15%{transform:translate(-50%,-50%) scale(.92);opacity:1}25%{transform:translate(-50%,-50%) scale(1.04)}80%{transform:translate(-50%,-50%) scale(1);opacity:1}100%{transform:translate(-50%,-50%) scale(1.3);opacity:0}}
 /* タイトル */
 .std-title{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px}
-.st-logo{font-size:130px;font-weight:900;color:#fff;-webkit-text-stroke:10px #3b1d8f;paint-order:stroke;line-height:1;text-align:center;filter:drop-shadow(0 8px 0 rgba(0,0,0,.35))}
-.st-logo small{display:block;font-size:64px;color:#ffe066}
+.st-logo{width:1000px;filter:drop-shadow(0 10px 18px rgba(0,0,0,.55))}
+.st-logo img{display:block;width:100%}
+.st-logo b{display:block;font-size:110px;text-align:center}
 .st-sub{font-size:30px;color:#fff;text-shadow:0 3px 0 #000;margin-bottom:16px}
 .st-mode{font-size:40px!important;padding:16px 60px!important}
 .st-cred{font-size:18px!important}
@@ -65,7 +66,7 @@
 /* 勝利 */
 .std-win{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;padding-bottom:26px;gap:8px;opacity:0;transition:opacity .6s}
 .std-win.on{opacity:1}
-.sw-head{font-size:52px;font-weight:900;color:#ffe066;-webkit-text-stroke:6px #7c2d12;paint-order:stroke;text-align:center}
+.sw-head{font-size:60px;text-align:center}
 .sw-nm{font-size:30px;color:#fff;text-shadow:0 3px 0 #000}
 .sw-hp{font-size:18px;color:#fff;background:rgba(0,0,0,.5);padding:4px 16px;border-radius:10px}
 .sw-btns{display:flex;gap:16px;margin-top:6px}
@@ -105,10 +106,22 @@
 .std-cut.a div{right:300px;align-items:flex-end;transform:skewY(7deg) translateX(700px)}
 .std-cut.b div{left:300px;align-items:flex-start;transform:skewY(7deg) translateX(-700px)}
 .std-cut.on div{transform:skewY(7deg)}
-.std-cut b{font-size:88px;font-weight:900;color:#fff;-webkit-text-stroke:8px #0b1d50;paint-order:stroke;line-height:1.1}
+.std-cut b{font-size:84px;line-height:1.15;font-weight:400}
 .std-cut small{font-size:30px;color:#fff;background:rgba(0,0,0,.5);padding:2px 14px;border-radius:999px}
-.std-dmg{position:absolute;transform:translate(-50%,-50%);font-size:96px;font-weight:900;color:#fff;-webkit-text-stroke:8px #c92a2a;paint-order:stroke;animation:stddmg 1.5s forwards;text-align:center;line-height:1}
-.std-dmg small{display:block;font-size:34px;color:#ffe066;-webkit-text-stroke:5px #862e9c}
-.std-dmg.crit{font-size:120px;-webkit-text-stroke-color:#862e9c}
+.std-dmg{position:absolute;transform:translate(-50%,-50%);font-size:100px;animation:stddmg 1.5s forwards;text-align:center;line-height:1}
+.std-dmg small{display:block;font-size:38px;margin-bottom:4px}
+.std-dmg.crit{font-size:124px}
 @keyframes stddmg{0%{transform:translate(-50%,-50%) scale(2.4)}12%{transform:translate(-50%,-50%) scale(.9)}20%{transform:translate(-50%,-50%) scale(1.05)}80%{transform:translate(-50%,-80%) scale(1);opacity:1}100%{transform:translate(-50%,-100%);opacity:0}}
-.std-go.ko{font-size:170px;-webkit-text-stroke-color:#862e9c;color:#ffe066}
+.std-go.ko{font-size:180px}
+/* ゲームっぽい文字（ドットのフォント＋グラデーション＋こいふち＋かげ）。<span class="gt" data-t="文字"> */
+.gt{position:relative;display:inline-block;isolation:isolate;font-family:"DotLocal",var(--f);font-weight:400;letter-spacing:.02em;line-height:1.1;color:transparent;--g:linear-gradient(180deg,#ffffff 0%,#fff3a0 42%,#ffb03b 58%,#ff7a1a 100%)}
+.gt::before,.gt::after{content:attr(data-t);position:absolute;left:0;top:0;white-space:nowrap}
+.gt::before{z-index:-1;color:#1b1446;-webkit-text-stroke:.17em #1b1446;text-shadow:0 .08em 0 #5b2bb5,0 .14em 0 #2a1170,0 .2em .12em rgba(0,0,0,.5)}
+.gt::after{background:var(--g);-webkit-background-clip:text;background-clip:text;color:transparent}
+.gt.cy{--g:linear-gradient(180deg,#ffffff 0%,#a5f3ff 40%,#5cc8ff 60%,#7cf0a8 100%)}
+.gt.gd{--g:linear-gradient(180deg,#fffbe0 0%,#ffe066 45%,#f5a000 60%,#ffcf3f 100%)}
+.gt.pk{--g:linear-gradient(180deg,#ffffff 0%,#ffd0ec 40%,#ff6fb5 62%,#ffb0d8 100%)}
+.gt.yl{--g:linear-gradient(180deg,#ffffff 0%,#fff59d 45%,#ffc400 62%,#ff9100 100%)}
+/* アイテムえらびの「けってい」は 右下（電子黒板の上は 子どもの手が とどかない） */
+.scr.res .prog #ok{position:fixed;right:24px;bottom:20px;z-index:5;font-size:34px!important;padding:16px 54px!important}
+.scr.res .prog ~ .panel{bottom:110px!important}

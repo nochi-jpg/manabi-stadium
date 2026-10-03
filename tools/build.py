@@ -35,6 +35,9 @@ PATCHES = [
     # わざの打ちあいは 3Dで（ルーレット・教科・わざ・問題は まなびバトルの画面のまま）
     ("    }\n    hideGauges();\n    const ev = resolveTurn(order, turn, false);\n", "    }\n    hideGauges();\n    const hp0 = { P: P.hp, B: B.hp };\n    const ev = resolveTurn(order, turn, false);\n"),
     ("    saveVs();\n    await playEvents(ev);\n", "    saveVs();\n    if (window.STD && STD.on && S && S.stadium && STD.ok()) { await STD.fight(ev, stdFightData(hp0, turn)); updBars(); } else await playEvents(ev);\n"),
+    # まちがえたときの 解説は 1秒で 自動で 消える（テンポを上げる）
+    ("          await wait(2500); nb.disabled = false;\n          await new Promise(r => (nb.onclick = r));\n",
+     "          if (S && S.stadium) await wait(1000); else { await wait(2500); nb.disabled = false;\n          await new Promise(r => (nb.onclick = r)); }\n"),
     # はじめ：タイトル（まなびバトルの セーブは 読まない）
     ("  preload().then(() => {\n    S = load();\n    if (S) titleScreen(); else startNew();\n  });\n",
      "@@FLOW@@\n  preload().then(() => {\n    S = stdS();\n    if (STDX.on && STDX.init) STDX.init();\n    stdTitle();\n  });\n"),
@@ -66,6 +69,8 @@ def main():
     img = {}
     for p in sorted((AS / 'images' / 'player').glob('*.png')):
         img['images/player/' + p.name] = 'data:image/png;base64,' + base64.b64encode(p.read_bytes()).decode()
+    logo = AS / 'stadium' / 'logo.png'
+    if logo.exists(): img['logo'] = 'data:image/png;base64,' + base64.b64encode(logo.read_bytes()).decode()
     (DIST / 'std_img.js').write_text('window.STD_IMG=' + json.dumps(img) + ';\n', encoding='utf-8')
     # index.html
     h = (MB / 'index.html').read_text(encoding='utf-8')

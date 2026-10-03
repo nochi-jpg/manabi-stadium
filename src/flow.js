@@ -4,7 +4,7 @@
   // ・対戦の ルール・画面は まなびバトルと 同じ（vsTurn などを そのまま使う）
   // ・まなびバトルの セーブ（manabi_battle_save）には さわらない
   // =====================================================================
-  const STD_VERSION = '0.2.0';
+  const STD_VERSION = '0.3.0';
   const STDX = window.STD || { on: false, ok: () => false };
   const stdS = () => ({ stadium: true, owned: Object.keys(D.ITEM), fav: [], sel: { tempo: 'fast' }, debug: null, pname: '先生', qs: {}, st: {} });
   window.STD_SE = k => se(k);
@@ -13,7 +13,7 @@
     BT = null;
     if (STDX.endWin) try { STDX.endWin(); } catch (e) { }
     const el = render(`<div class="std-title">
-      <div class="st-logo"><small>まなび</small>スタジアム</div>
+      <div class="st-logo">${window.STD_IMG && STD_IMG.logo ? `<img src="${STD_IMG.logo}" alt="まなびスタジアム">` : '<b>まなびスタジアム</b>'}</div>
       <div class="st-sub">せんせいの とうぎじょう</div>
       <button class="btn-main st-mode" id="m1">🆚 1vs1モード</button>
       <button class="btn-gray st-cred" id="cr">📜 クレジット</button>
@@ -100,7 +100,7 @@
         const { P, B } = BT, res = V.result, wf = res === 'P' ? P : B;
         const head = res === 'draw' ? '🤝 引き分け！' : `🏆 プレイヤー${res === 'P' ? 'A' : 'B'}　${esc(wf.pname)}さんの 勝ち！`;
         const el = render(`<div class="std-win">
-          <div class="sw-head">${head}</div>
+          <div class="sw-head">${STDX.gt ? STDX.gt(head.replace(/^🏆 |^🤝 /, ''), 'gd') : head}</div>
           ${res === 'draw' ? '' : `<div class="sw-nm">${esc(wf.name)}</div>`}
           <div class="sw-hp">${esc(P.name)} HP ${Math.max(0, R0(P.hp))}／${P.maxhp}　　${esc(B.name)} HP ${Math.max(0, R0(B.hp))}／${B.maxhp}</div>
           <div class="sw-btns">
@@ -108,6 +108,7 @@
             <button class="btn-blue" id="w2">🎒 アイテムを えらびなおして 再戦</button>
             <button class="btn-gray" id="w3">🏠 タイトルに もどる</button></div></div>`, 'btl');
         bgm('vsResult');
+        el.style.background = 'transparent';
         if (STDX.ok()) await STDX.win(res, stdIntroData());
         el.querySelector('.std-win').classList.add('on');
         const c = await new Promise(r => ['w1', 'w2', 'w3'].forEach(id => ($('#' + id, el).onclick = () => r(id))));

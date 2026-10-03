@@ -38,7 +38,13 @@
   function monsterTex(art, emo, flip) {
     const d = dataOf(imgSrc(art));
     let t;
-    if (d) { t = new THREE.TextureLoader().load(d); t.magFilter = THREE.NearestFilter; t.minFilter = THREE.NearestFilter; t.generateMipmaps = false; }
+    if (d) {
+      const c = document.createElement('canvas'); c.width = c.height = 1024;
+      t = new THREE.CanvasTexture(c); t.anisotropy = 8; t.minFilter = THREE.LinearMipmapLinearFilter; t.magFilter = THREE.LinearFilter;
+      const im = new Image();
+      im.onload = () => { const g = c.getContext('2d'), k = Math.max(1, Math.floor(1024 / Math.max(im.width, im.height))); c.width = im.width * k; c.height = im.height * k; g.imageSmoothingEnabled = false; g.drawImage(im, 0, 0, c.width, c.height); t.needsUpdate = true; };
+      im.src = d;
+    }
     else t = canvasTex(256, 256, (g) => { g.font = '200px serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(emo || '❓', 128, 140); });
     t.colorSpace = THREE.SRGBColorSpace;
     if (flip) { t.wrapS = THREE.RepeatWrapping; t.repeat.x = -1; t.offset.x = 1; }
@@ -181,11 +187,12 @@
       if (D.imW && D.imW.complete) g.drawImage(D.imW, w / 2 - 190, 40, 380, 380);
       g.fillStyle = '#ffe066'; g.font = `900 90px ${FONT}`; g.fillText(D.wText, w / 2, 490);
     } else {
-      g.fillStyle = '#ffe066'; g.font = `900 110px ${FONT}`; g.fillText('まなび', w / 2, h / 2 - 70);
-      g.fillStyle = '#fff'; g.font = `900 120px ${FONT}`; g.fillText('スタジアム', w / 2, h / 2 + 70);
+      if (LOGO && LOGO.complete && LOGO.width) { const k = Math.min((w - 80) / LOGO.width, 300 / LOGO.height); g.drawImage(LOGO, (w - LOGO.width * k) / 2, (h - LOGO.height * k) / 2, LOGO.width * k, LOGO.height * k); }
+      else { g.fillStyle = '#ffe066'; g.font = `900 110px ${FONT}`; g.fillText('まなび', w / 2, h / 2 - 70); g.fillStyle = '#fff'; g.font = `900 120px ${FONT}`; g.fillText('スタジアム', w / 2, h / 2 + 70); }
     }
     W3.vision.needsUpdate = true;
   }
+  const LOGO = (() => { const d = window.STD_IMG && window.STD_IMG.logo; if (!d) return null; const im = new Image(); im.onload = () => { if (W3.vision && visionMode === 'logo') drawVision('logo'); }; im.src = d; return im; })();
   // 進化の段階（絵の _1〜_4）で 大きさを かえる
   const SZ = { 1: 0.62, 2: 0.8, 3: 0.95, 4: 1.12 };
   const stageOfArt = art => { const m = /_(\d)\.png/.exec(imgSrc(art)); return m ? +m[1] : 3; };
@@ -196,6 +203,11 @@
       x.sz = SZ[stageOfArt(f.art)] || 0.95; x.lean = 0; x.kb = 0; x.flick = 0; x.ko = 0; x.home = i ? 6 : -6;
     });
   }
+  let HALO = null;
+  function haloTex() {
+    if (HALO) return HALO;
+    return (HALO = canvasTex(256, 256, (g) => { const r = g.createRadialGradient(128, 128, 10, 128, 128, 128); r.addColorStop(0, 'rgba(255,250,220,.9)'); r.addColorStop(0.4, 'rgba(255,220,150,.35)'); r.addColorStop(1, 'rgba(255,200,120,0)'); g.fillStyle = r; g.fillRect(0, 0, 256, 256); }));
+  }
   function makeMon(x, color) {
     const g = new THREE.Group();
     const mat = new THREE.MeshBasicMaterial({ transparent: true, alphaTest: 0.4, toneMapped: false });
@@ -205,6 +217,8 @@
     const add = { transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false, toneMapped: false, side: THREE.DoubleSide };
     const ring = new THREE.Mesh(new THREE.RingGeometry(2.1, 2.5, 48), new THREE.MeshBasicMaterial({ color, ...add })); ring.rotation.x = -Math.PI / 2; ring.position.y = 0.05;
     const pillar = new THREE.Mesh(new THREE.CylinderGeometry(2.2, 2.2, 30, 32, 1, true), new THREE.MeshBasicMaterial({ color, ...add })); pillar.position.y = 15;
+    const halo = new THREE.Mesh(new THREE.PlaneGeometry(9, 9), new THREE.MeshBasicMaterial({ map: haloTex(), transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false, toneMapped: false }));
+    halo.position.set(0, 0, -0.05); body.add(halo); body.userData.halo = halo;
     const holder = new THREE.Group(); holder.add(body);
     g.add(sh, ring, pillar, holder); g.position.x = x; g.visible = false; scene.add(g);
     return { g, body, holder, sh, ring, pillar, mat, home: x, t0: -99, lean: 0 };
@@ -338,7 +352,10 @@
     const g = fxc; if (!g) return;
     g.setTransform(fx.width / W, 0, 0, fx.height / H, 0, 0);
     g.clearRect(0, 0, W, H);
-    if (petals > 0) { const n = petals * dt * 60; for (let i = 0; i < n; i++) P({ k: 'petal', x: rand(-50, W + 50), y: -20, vx: rand(-40, 80), vy: rand(60, 140), g: 0, life: 7, size: rand(8, 14), rot: rand(0, 6), vr: rand(-3, 3), color: ['#ffc9de', '#ffb3cf', '#ffe3ee', '#ff9dc0', '#ffffff'][(Math.random() * 5) | 0], add: false, sw: rand(0, 6) }); }
+    if (petals > 0) {
+      petalAcc += petals * dt;
+      while (petalAcc >= 1) { petalAcc--; const far = Math.random() < 0.5; P({ k: 'petal', x: rand(-40, W + 40), y: -20, vx: rand(-30, 60), vy: far ? rand(40, 70) : rand(70, 110), g: 0, life: 12, size: far ? rand(5, 7) : rand(8, 11), rot: rand(0, 6), vr: rand(-2, 2), color: ['#ffd1e1', '#ffb8d0', '#ffe6ef', '#ffc2d6'][(Math.random() * 4) | 0], add: false, sw: rand(0, 6), a: far ? 0.55 : 0.9 }); }
+    }
     for (let i = PS.length - 1; i >= 0; i--) {
       const p = PS[i]; p.life -= dt; if (p.life <= 0 || p.y > H + 60) { PS.splice(i, 1); continue; }
       p.vy += p.g * dt; p.vx *= Math.pow(p.drag, dt * 60); p.vy *= Math.pow(p.drag, dt * 60);
@@ -368,7 +385,13 @@
       case 'shape': { g.save(); g.translate(p.x, p.y); g.rotate(p.rot); g.strokeStyle = p.color; g.lineWidth = 4; const s = p.size * (1.6 - u * 0.6); g.beginPath(); for (let i = 0; i < p.sides; i++) { const a = (i / p.sides) * 6.283; g[i ? 'lineTo' : 'moveTo'](Math.cos(a) * s, Math.sin(a) * s); } g.closePath(); g.stroke(); g.restore(); break; }
       case 'star': { g.save(); g.translate(p.x, p.y); g.rotate(p.rot); g.fillStyle = p.color; const s = p.size; g.beginPath(); for (let i = 0; i < 10; i++) { const r = i % 2 ? s * 0.42 : s, a = (i / 10) * 6.283 - Math.PI / 2; g[i ? 'lineTo' : 'moveTo'](Math.cos(a) * r, Math.sin(a) * r); } g.closePath(); g.fill(); g.restore(); break; }
       case 'rock': g.save(); g.translate(p.x, p.y); g.rotate(p.rot); g.fillStyle = p.color; g.fillRect(-p.size / 2, -p.size / 2, p.size, p.size * 0.8); g.restore(); break;
-      case 'petal': g.save(); g.translate(p.x, p.y); g.rotate(p.rot); g.scale(1, 0.55 + Math.sin(p.sw * 1.7) * 0.35); g.fillStyle = p.color; g.beginPath(); g.ellipse(0, 0, p.size, p.size * 0.6, 0, 0, 6.283); g.fill(); g.restore(); break;
+      case 'petal': { // さくらの花びら（先が少し へこんだ形）。くるくる 回って 見える
+        g.save(); g.translate(p.x, p.y); g.rotate(p.rot); g.scale(1, 0.35 + Math.abs(Math.sin(p.sw * 1.3)) * 0.65);
+        const s = p.size, gr = g.createLinearGradient(-s, 0, s, 0); gr.addColorStop(0, '#ffffff'); gr.addColorStop(1, p.color);
+        g.fillStyle = gr; g.beginPath(); g.moveTo(-s, 0);
+        g.bezierCurveTo(-s * 0.4, -s * 0.75, s * 0.6, -s * 0.7, s, -s * 0.18); g.lineTo(s * 0.72, 0); g.lineTo(s, s * 0.18);
+        g.bezierCurveTo(s * 0.6, s * 0.7, -s * 0.4, s * 0.75, -s, 0); g.fill(); g.restore(); break;
+      }
       case 'seal': { g.save(); g.translate(p.x, p.y); g.rotate(p.rot); g.strokeStyle = p.color; g.lineWidth = 4; g.shadowColor = p.color; g.shadowBlur = 14; const r = p.size; g.beginPath(); g.arc(0, 0, r, 0, 6.283); g.stroke(); g.beginPath(); g.arc(0, 0, r * 0.75, 0, 6.283); g.stroke(); g.beginPath(); for (let i = 0; i < 6; i++) { const a = (i / 6) * 6.283 * 2; g[i ? 'lineTo' : 'moveTo'](Math.cos(a) * r * 0.75, Math.sin(a) * r * 0.75); } g.closePath(); g.stroke(); g.restore(); g.shadowBlur = 0; break; }
       case 'hex': { g.save(); g.translate(p.x, p.y); g.strokeStyle = p.color; g.fillStyle = p.color + '33'; g.lineWidth = 5; const r = p.size * (1.2 - u * 0.2); g.beginPath(); for (let i = 0; i < 6; i++) { const a = (i / 6) * 6.283 + Math.PI / 6; g[i ? 'lineTo' : 'moveTo'](Math.cos(a) * r, Math.sin(a) * r); } g.closePath(); g.fill(); g.stroke(); g.restore(); break; }
     }
@@ -456,7 +479,7 @@
     if (m === 'title') drawVision('logo');
   }
   STD.mode = setMode;
-  let petals = 0;
+  let petals = 0, petalAcc = 0;
 
   // ---------- 入場 ----------
   // o = { A:{art,emo,name,card}, B:{...}, nA, nB }  card は game.js が作った紹介パネルの HTML
@@ -509,7 +532,7 @@
     setShot([0, 2.4, 18], [0, 2.8, 0], skip ? 0.01 : 0.8); drift([0, 2.6, 15], [0, 2.9, 0], 3);
     telop('にらみあう 2ひき……！');
     ui.querySelectorAll('.std-card').forEach(c => c.remove());
-    const vs = document.createElement('div'); vs.className = 'std-vs'; vs.innerHTML = `<div class="sv-a">${o.A.pnameH}<small>${o.A.nameH}</small></div><div class="sv-x">VS</div><div class="sv-b">${o.B.pnameH}<small>${o.B.nameH}</small></div>`; ui.appendChild(vs);
+    const vs = document.createElement('div'); vs.className = 'std-vs'; vs.innerHTML = `<div class="sv-a">${o.A.pnameH}<small>${o.A.nameH}</small></div><div class="sv-x">${gt('VS', 'gd')}</div><div class="sv-b">${o.B.pnameH}<small>${o.B.nameH}</small></div>`; ui.appendChild(vs);
     requestAnimationFrame(() => vs.classList.add('on'));
     window.STD_SE && window.STD_SE('start'); W3.shake = 0.3;
     const t1 = performance.now();
@@ -522,7 +545,7 @@
     // 4. 試合開始！
     skip = false;
     m.forEach(x => (x.lean = 0));
-    const go = document.createElement('div'); go.className = 'std-go'; go.textContent = '試合開始！'; ui.appendChild(go);
+    const go = document.createElement('div'); go.className = 'std-go'; go.innerHTML = gt('試合開始！', 'cy'); ui.appendChild(go);
     flashScreen('#fff', 0.9); W3.shake = 0.6; W3.excite = 1.4; window.STD_SE && window.STD_SE('crit');
     W3.conf.emit(LIGHT ? 150 : 300, new THREE.Vector3(0, 2, 0), 12, ['#ffe066', '#ffffff', '#ff6b6b', '#4dabf7']);
     await W8(1500);
@@ -540,6 +563,7 @@
     t.innerHTML = `<span>じっきょう</span><b>${txt}</b>`; t.classList.remove('on'); void t.offsetWidth; t.classList.add('on');
   }
   const pick1 = a => a[(Math.random() * a.length) | 0];
+  const gt = (t, c = '') => `<span class="gt ${c}" data-t="${t}">${t}</span>`; STD.gt = gt;
   STD.fight = async function (ev, o) {
     setMode('fight');
     let skip = false;
@@ -583,7 +607,7 @@
         telopOn(`${f.nameH}の <em>${sk1}</em>！（${subj}）`);
         const cut = document.createElement('div'); cut.className = 'std-cut ' + (atk ? 'b' : 'a');
         cut.style.setProperty('--c', th.c[0]);
-        cut.innerHTML = `<img src="${dataOf(imgSrc(f.art)) || ''}" alt=""><div><b>${sk1}！</b><small>${subj}</small></div>`;
+        cut.innerHTML = `<img src="${dataOf(imgSrc(f.art)) || ''}" alt=""><div><b>${gt(sk1 + '！')}</b><small>${subj}</small></div>`;
         ui.appendChild(cut); requestAnimationFrame(() => cut.classList.add('on'));
         window.STD_SE && window.STD_SE('thunder');
         await W8(550);
@@ -613,7 +637,7 @@
         m[ti].kb = e.crit ? 3 : 1.8; m[ti].flick = 0.6;
         W3.shock.position.x = tx; W3.shockT = 0; W3.punch = e.crit ? 1 : 0.5;
         const d = document.createElement('div'); d.className = 'std-dmg' + (e.crit ? ' crit' : '');
-        d.innerHTML = `${e.crit ? '<small>かいしん！</small>' : ''}${e.hit}`; d.style.left = p.x + 'px'; d.style.top = (p.y - 40) + 'px';
+        d.innerHTML = `${e.crit ? `<small>${gt('かいしん！', 'pk')}</small>` : ''}${gt(String(e.hit), e.crit ? 'pk' : 'yl')}`; d.style.left = p.x + 'px'; d.style.top = (p.y - 40) + 'px';
         ui.appendChild(d); setTimeout(() => d.remove(), FAST() ? 20 : 1500);
         setHP(e.snap);
         const fl = e.crit ? 'かいしんの いちげき！！' : e.eff > 1 ? 'こうかは ばつぐんだ！' : e.eff < 1 ? 'いまひとつの ようだ…' : e.hit >= f.maxhp * 0.3 ? 'これは 大きい！' : pick1(['きまった！', 'ヒット！', 'いい一撃！']);
@@ -636,7 +660,7 @@
       skip = false;
       setShot([kx * 0.4, 2.2, 10], [kx, 1.6, 0], 0.4);
       m[ko].ko = 0.001; window.STD_SE && window.STD_SE('crit'); W3.shake = 0.6; W3.excite = 1.5;
-      const k = document.createElement('div'); k.className = 'std-go ko'; k.textContent = 'K.O.!'; ui.appendChild(k);
+      const k = document.createElement('div'); k.className = 'std-go ko'; k.innerHTML = gt('K.O.!', 'gd'); ui.appendChild(k);
       flashScreen('#fff', 0.7);
       telopOn(`${(ko ? o.B : o.A).nameH}は たおれた！`);
       await W8(1900); k.remove();
@@ -666,13 +690,15 @@
     const im = new Image(); im.src = dataOf(imgSrc((w === 'B' ? o.B : o.A).art));
     im.onload = () => drawVision('win', { imW: im, wText: w === 'draw' ? 'ひきわけ！' : 'WINNER!' });
     drawVision('win', { imW: im, wText: w === 'draw' ? 'ひきわけ！' : 'WINNER!' });
-    setShot([0, 6, 22], [0, 3, 0], 0.01); drift([0, 3.2, 10.5], [0, 3, 0], 2.2);
-    W3.exBase = 1.0; W3.excite = 1.4; petals = LIGHT ? 1.2 : 2.5;
+    const zW = show.length === 1 ? (m[show[0]].sz || 1) : 1;
+    setShot([0, 6, 24], [0, 2.8 * zW, 0], 0.01); drift([0, 2.8 * zW + 0.4, 9 + zW * 6], [0, 2.4 * zW, 0], 2.2);
+    m.forEach((x, i) => (x.body.userData.halo.material.opacity = show.includes(i) ? 0.85 : 0));
+    W3.exBase = 1.0; W3.excite = 1.4; petals = LIGHT ? 10 : 22; // 1秒に この数
     W3.conf.emit(LIGHT ? 150 : 320, new THREE.Vector3(0, 2, 0), 12, ['#ffc9de', '#ffffff', '#ffe066', '#ff9dc0']);
     flashScreen('#fff', 0.8);
     await wait(900);
   };
-  STD.endWin = function () { petals = 0; W3.mon.forEach((x, i) => { x.home = i ? 6 : -6; x.g.visible = false; }); W3.spots.forEach((s, i) => { s.intensity = 0; s.position.set(i ? 6 : -6, 20, 6); s.target.position.set(i ? 6 : -6, 0, 0); }); mode = ''; setMode('title'); };
+  STD.endWin = function () { petals = 0; W3.mon.forEach(x => (x.body.userData.halo.material.opacity = 0)); W3.mon.forEach((x, i) => { x.home = i ? 6 : -6; x.g.visible = false; }); W3.spots.forEach((s, i) => { s.intensity = 0; s.position.set(i ? 6 : -6, 20, 6); s.target.position.set(i ? 6 : -6, 0, 0); }); mode = ''; setMode('title'); };
 
   // ---------- はじめ ----------
   STD.init = function () {
