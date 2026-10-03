@@ -4,7 +4,7 @@
   // ・対戦の ルール・画面は まなびバトルと 同じ（vsTurn などを そのまま使う）
   // ・まなびバトルの セーブ（manabi_battle_save）には さわらない
   // =====================================================================
-  const STD_VERSION = '0.3.0';
+  const STD_VERSION = '0.3.1';
   const STDX = window.STD || { on: false, ok: () => false };
   const stdS = () => ({ stadium: true, owned: Object.keys(D.ITEM), fav: [], sel: { tempo: 'fast' }, debug: null, pname: '先生', qs: {}, st: {} });
   window.STD_SE = k => se(k);

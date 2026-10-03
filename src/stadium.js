@@ -105,7 +105,7 @@
     const band = new THREE.Mesh(new THREE.CylinderGeometry(15.95, 15.95, 0.35, 96, 1, true), new THREE.MeshBasicMaterial({ color: 0x66e0ff, side: THREE.DoubleSide, toneMapped: false }));
     band.position.y = WALL - 0.3; scene.add(band);
     // お客さん
-    const crowd = (W3.crowd = []), sp = LIGHT ? 1.15 : 0.72;
+    const crowd = (W3.crowd = []), sp = LIGHT ? 1.2 : 0.85;
     for (let i = 0; i < ROWS; i++) {
       const r = R0 + i * SR + 0.7, y = WALL + i * SH, n = Math.floor((Math.PI * 2 * r) / sp);
       for (let k = 0; k < n; k++) {
@@ -115,12 +115,7 @@
         crowd.push({ x: Math.cos(a) * r, z: Math.sin(a) * r, y, a, ph: rand(0, 6.28), sp: rand(5, 9), h: rand(0.7, 1.0) });
       }
     }
-    const geo = new THREE.BoxGeometry(0.42, 0.75, 0.3); geo.translate(0, 0.375, 0);
-    W3.crowdMesh = new THREE.InstancedMesh(geo, new THREE.MeshLambertMaterial(), crowd.length);
-    const pal = [0xff6b6b, 0x4dabf7, 0xffd43b, 0x69db7c, 0xf783ac, 0xffffff, 0x845ef7, 0xff922b], col = new THREE.Color();
-    crowd.forEach((c, i) => { col.setHex(pal[i % pal.length]).multiplyScalar(Math.random() < 0.12 ? 1.3 : rand(0.25, 0.55)); W3.crowdMesh.setColorAt(i, col); });
-    scene.add(W3.crowdMesh);
-    W3.dummy = new THREE.Object3D();
+    buildCrowd(crowd);
     // 入場ゲート
     [[-1, 0x4dabf7], [1, 0xff6b6b]].forEach(([s, c]) => {
       const g = new THREE.Group(), m = new THREE.MeshBasicMaterial({ color: c, toneMapped: false });
@@ -156,6 +151,34 @@
     W3.shock.rotation.x = -Math.PI / 2; W3.shock.position.y = 0.1; scene.add(W3.shock); W3.shockT = 9;
     W3.cam = { p: V(0, 20, 45), l: V(0, 3, 0) }; W3.excite = 0.4; W3.shake = 0; W3.punch = 0;
     drawVision('logo');
+  }
+  // 観客席の モンスター：5教科の 1段階目（かわいい・かっこいい）＝10しゅるい。向きは ばらばら・ぴょんぴょん はねる
+  const CROWD_ART = ['kokugo', 'sansu', 'rika', 'shakai', 'eigo'].flatMap(k => ['cute', 'cool'].map(s => `images/player/${k}_${s}_1.png`));
+  function buildCrowd(crowd) {
+    const n = crowd.length, pos = new Float32Array(n * 3), att = new Float32Array(n * 4);
+    crowd.forEach((c, i) => { pos.set([c.x, c.y, c.z], i * 3); att.set([(Math.random() * 10) | 0, c.ph, c.sp, Math.random() < 0.5 ? 1 : 0], i * 4); });
+    const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(pos, 3)); g.setAttribute('aD', new THREE.BufferAttribute(att, 4));
+    const cv = document.createElement('canvas'); cv.width = 640; cv.height = 256;
+    const tex = new THREE.CanvasTexture(cv); tex.colorSpace = THREE.SRGBColorSpace; tex.minFilter = THREE.LinearMipmapLinearFilter;
+    const cg = cv.getContext('2d'); let left = 10;
+    CROWD_ART.forEach((src, i) => { const d = dataOf(src); if (!d) { left--; return; } const im = new Image(); im.onload = () => { cg.drawImage(im, (i % 5) * 128, ((i / 5) | 0) * 128, 128, 128); if (--left <= 0) tex.needsUpdate = true; }; im.src = d; });
+    const ok = CROWD_ART.some(src => dataOf(src));
+    W3.crowdU = { uTime: { value: 0 }, uEx: { value: 0.4 }, uProj: { value: 600 }, uTex: { value: tex }, uOk: { value: ok ? 1 : 0 } };
+    const mat = new THREE.ShaderMaterial({
+      uniforms: W3.crowdU, transparent: false, depthWrite: true,
+      vertexShader: `attribute vec4 aD; uniform float uTime, uEx, uProj; varying vec3 vD; varying float vB;
+        void main(){ float j = max(0.0, sin(uTime * aD.z + aD.y)) * 0.6 * uEx; vec3 p = position + vec3(0.0, 0.42 + j, 0.0);
+          vec4 mv = modelViewMatrix * vec4(p, 1.0); gl_Position = projectionMatrix * mv; gl_PointSize = 1.15 * uProj / -mv.z;
+          vD = aD.xyw; vB = 0.75 + 0.25 * fract(aD.y * 7.13); }`,
+      fragmentShader: `uniform sampler2D uTex; uniform float uOk; varying vec3 vD; varying float vB;
+        void main(){ vec2 uv = gl_PointCoord; if (vD.z > 0.5) uv.x = 1.0 - uv.x;
+          if (uOk < 0.5) { if (abs(uv.x - 0.5) > 0.22) discard; gl_FragColor = vec4(vec3(0.3 + 0.4 * fract(vD.x * 0.37)) * vB, 1.0); return; }
+          float k = vD.x; vec2 a = (vec2(mod(k, 5.0), floor(k / 5.0)) + vec2(uv.x, uv.y)) / vec2(5.0, 2.0);
+          vec4 c = texture2D(uTex, vec2(a.x, 1.0 - a.y)); if (c.a < 0.5) discard; gl_FragColor = vec4(c.rgb * vB, 1.0);
+          #include <colorspace_fragment>
+        }`,
+    });
+    const pts = new THREE.Points(g, mat); pts.frustumCulled = false; scene.add(pts); W3.crowdPts = pts;
   }
   function drawField(g, w, h) {
     const cx = w / 2, cy = h / 2, gr = g.createRadialGradient(cx, cy, 50, cx, cy, 512);
@@ -254,7 +277,7 @@
 
   // ---------- カメラ ----------
   const CAM = {
-    title: t => { const a = t * 0.08; return { p: [Math.sin(a) * 40, 16, Math.cos(a) * 40], l: [0, 3, 0] }; },
+    title: t => { const a = t * 0.08; return { p: [Math.sin(a) * 30, 22, Math.cos(a) * 30], l: [0, 3, 0] }; },
     battle: t => ({ p: [Math.sin(t * 0.12) * 3, 9 + Math.sin(t * 0.2) * 0.4, 25], l: [0, 2.5, 0] }),
   };
   let shot = null; // { from, to, t0, dur }（入場などで その場面に うつる）
@@ -262,11 +285,16 @@
     const V = (a) => new THREE.Vector3(...a);
     shot = { fp: W3.cam.p.clone(), fl: W3.cam.l.clone(), tp: V(p), tl: V(l), t0: now(), dur: Math.max(0.001, dur), drift: null };
   }
+  // 観客席の 上を まわる（かべの うらに 出ない）
+  function orbitShot(a0, a1, r, h0, h1, dur) { shot = { orbit: { a0, a1, r, h0, h1, dur }, t0: now() }; }
   function drift(p, l, dur) { const V = (a) => new THREE.Vector3(...a); if (shot) shot.drift = { p: V(p), l: V(l), t0: now() + shot.dur, dur }; }
   const now = () => (performance.now() - T0) / 1000;
   function updateCam(t, dt) {
     let p, l;
-    if (shot) {
+    if (shot && shot.orbit) {
+      const o = shot.orbit, u = ease((t - shot.t0) / o.dur), a = o.a0 + (o.a1 - o.a0) * u;
+      p = new THREE.Vector3(Math.sin(a) * o.r, o.h0 + (o.h1 - o.h0) * u, Math.cos(a) * o.r); l = new THREE.Vector3(0, 3, 0);
+    } else if (shot) {
       const u = ease((t - shot.t0) / shot.dur);
       p = shot.fp.clone().lerp(shot.tp, u); l = shot.fl.clone().lerp(shot.tl, u);
       if (shot.drift && t > shot.drift.t0) { const v = ease((t - shot.drift.t0) / shot.drift.dur); p.lerp(shot.drift.p, v); l.lerp(shot.drift.l, v); }
@@ -325,12 +353,8 @@
     if (s < 1) { W3.shock.scale.setScalar(1 + s * 9); W3.shock.material.opacity = 1 - s; } else W3.shock.material.opacity = 0;
     // 観客
     const ex = W3.excite; W3.excite += ((W3.exBase || 0.4) - W3.excite) * Math.min(1, dt * 0.8);
-    const c = W3.crowd, d = W3.dummy;
-    for (let i = 0; i < c.length; i++) {
-      const q = c[i], jump = Math.max(0, Math.sin(t * q.sp + q.ph)) * 0.55 * ex;
-      d.position.set(q.x, q.y + jump, q.z); d.rotation.set(0, -q.a + Math.PI / 2, 0); d.scale.set(1, q.h + jump * 0.3, 1); d.updateMatrix(); W3.crowdMesh.setMatrixAt(i, d.matrix);
-    }
-    W3.crowdMesh.instanceMatrix.needsUpdate = true;
+    W3.crowdU.uTime.value = t; W3.crowdU.uEx.value = ex;
+    W3.crowdU.uProj.value = renderer.getDrawingBufferSize(new THREE.Vector2()).y / (2 * Math.tan((camera.fov * Math.PI) / 360));
     W3.conf.update(dt);
   }
 
@@ -498,7 +522,7 @@
     const card = (html, side) => { const c = document.createElement('div'); c.className = 'std-card ' + side; c.innerHTML = html; ui.appendChild(c); requestAnimationFrame(() => c.classList.add('on')); return c; };
     ui.classList.add('letter');
     // 1. スタジアムを ぐるり
-    setShot([-30, 22, 40], [0, 3, 0], 0.01); drift([28, 14, 30], [0, 3, 0], 3.2);
+    orbitShot(-1.0, 1.0, 29, 25, 19, 3.2);
     telop('まなびスタジアムへ ようこそ！');
     await W8(3200);
     // 2. A の入場
@@ -591,7 +615,7 @@
     setHP(); requestAnimationFrame(() => hud.classList.add('on'));
     const sk = document.createElement('button'); sk.className = 'std-skip'; sk.textContent = 'スキップ ▶▶'; ui.appendChild(sk); sk.onclick = () => (skip = true);
     // ひいた画面から
-    setShot([0, 12, 30], [0, 2.5, 0], 0.01); drift([0, 4.2, 19], [0, 2.4, 0], 1.2);
+    setShot([0, 16, 27], [0, 2.5, 0], 0.01); drift([0, 4.2, 19], [0, 2.4, 0], 1.2);
     telopOn(pick1([`ターン${o.turn}！ わざの 打ちあいだ！`, `ターン${o.turn}！ さあ、どうなる！？`]));
     await W8(1300);
     let atk = -1, sk1 = null, subj = null, hits = 0;
@@ -665,7 +689,7 @@
       telopOn(`${(ko ? o.B : o.A).nameH}は たおれた！`);
       await W8(1900); k.remove();
     } else {
-      setShot([0, 7, 24], [0, 2.4, 0], skip ? 0.01 : 0.8);
+      setShot([0, 9, 21], [0, 2.4, 0], skip ? 0.01 : 0.8);
       telopOn(o.turn >= 3 ? '3ターン しゅうりょう！' : 'つぎの ターンへ！');
       await W8(1100);
     }
@@ -691,14 +715,13 @@
     im.onload = () => drawVision('win', { imW: im, wText: w === 'draw' ? 'ひきわけ！' : 'WINNER!' });
     drawVision('win', { imW: im, wText: w === 'draw' ? 'ひきわけ！' : 'WINNER!' });
     const zW = show.length === 1 ? (m[show[0]].sz || 1) : 1;
-    setShot([0, 6, 24], [0, 2.8 * zW, 0], 0.01); drift([0, 2.8 * zW + 0.4, 9 + zW * 6], [0, 2.4 * zW, 0], 2.2);
+    setShot([0, 9, 20], [0, 2.8 * zW, 0], 0.01); drift([0, 2.8 * zW + 0.4, 9 + zW * 6], [0, 2.4 * zW, 0], 2.2);
     m.forEach((x, i) => (x.body.userData.halo.material.opacity = show.includes(i) ? 0.85 : 0));
-    W3.exBase = 1.0; W3.excite = 1.4; petals = LIGHT ? 10 : 22; // 1秒に この数
-    W3.conf.emit(LIGHT ? 150 : 320, new THREE.Vector3(0, 2, 0), 12, ['#ffc9de', '#ffffff', '#ffe066', '#ff9dc0']);
+    W3.exBase = 1.0; W3.excite = 1.4;
     flashScreen('#fff', 0.8);
     await wait(900);
   };
-  STD.endWin = function () { petals = 0; W3.mon.forEach(x => (x.body.userData.halo.material.opacity = 0)); W3.mon.forEach((x, i) => { x.home = i ? 6 : -6; x.g.visible = false; }); W3.spots.forEach((s, i) => { s.intensity = 0; s.position.set(i ? 6 : -6, 20, 6); s.target.position.set(i ? 6 : -6, 0, 0); }); mode = ''; setMode('title'); };
+  STD.endWin = function () { W3.mon.forEach(x => (x.body.userData.halo.material.opacity = 0)); W3.mon.forEach((x, i) => { x.home = i ? 6 : -6; x.g.visible = false; }); W3.spots.forEach((s, i) => { s.intensity = 0; s.position.set(i ? 6 : -6, 20, 6); s.target.position.set(i ? 6 : -6, 0, 0); }); mode = ''; setMode('title'); };
 
   // ---------- はじめ ----------
   STD.init = function () {
