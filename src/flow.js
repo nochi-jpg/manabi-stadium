@@ -4,7 +4,7 @@
   // ・対戦の ルール・画面は まなびバトルと 同じ（vsTurn などを そのまま使う）
   // ・まなびバトルの セーブ（manabi_battle_save）には さわらない
   // =====================================================================
-  const STD_VERSION = '0.1.0';
+  const STD_VERSION = '0.2.0';
   const STDX = window.STD || { on: false, ok: () => false };
   const stdS = () => ({ stadium: true, owned: Object.keys(D.ITEM), fav: [], sel: { tempo: 'fast' }, debug: null, pname: '先生', qs: {}, st: {} });
   window.STD_SE = k => se(k);
@@ -46,6 +46,12 @@
     const one = (f, w, pr) => ({ art: f.art, emo: f.emo, name: f.name, nameH: esc(f.name), pnameH: esc(f.pname), card: stdCard(f, w, pr, mx) });
     return { A: one(P, 'A', V.prof.a), B: one(B, 'B', V.prof.b), nA: `${esc(P.pname)}さんの ${esc(P.name)}`, nB: `${esc(B.pname)}さんの ${esc(B.name)}` };
   }
+  // わざの打ちあい（3D）に わたすもの。hp0＝ターンの はじめの HP
+  function stdFightData(hp0, turn) {
+    const { P, B } = BT;
+    const one = (f, h) => ({ art: f.art, emo: f.emo, nameH: esc(f.name), pnameH: esc(f.pname), maxhp: f.maxhp, hp: h });
+    return { A: one(P, hp0.P), B: one(B, hp0.B), turn };
+  }
   async function stdRun() {
     for (;;) {
       const V = VSV;
@@ -66,7 +72,6 @@
         const w = V.phase === 'pickA' ? 'a' : 'b', o = w === 'a' ? 'B' : 'A', pr = V.prof[w];
         await tapScreen(`プレイヤー${AB[w]}（${esc(pr.pname)}）だけ<br>画面を見てください`, `プレイヤー${o}は 後ろを向いてね。画面をタップしてね`);
         const preset = V.picks[w].length ? V.picks[w] : V.last ? V.last[w] : [];
-        bgm('vsPick');
         V.picks[w] = await pickItems(pr, preset.filter(n => pr.owned.includes(n)));
         V.phase = w === 'a' ? 'pickB' : 'intro'; saveVs(); continue;
       }

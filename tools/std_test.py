@@ -64,10 +64,11 @@ with sync_playwright() as p:
         if pg.query_selector('.std-card.on') and n[0] < 2: pg.screenshot(path=str(SHOTS / f'02_card{n[0]}.png')); n[0] += 1; pg.wait_for_timeout(2500)
         if pg.query_selector('.std-vs.on') and not (SHOTS / '03_vs.png').exists(): pg.screenshot(path=str(SHOTS / '03_vs.png'))
         if pg.query_selector('.std-go') and not (SHOTS / '04_go.png').exists(): pg.wait_for_timeout(250); pg.screenshot(path=str(SHOTS / '04_go.png'))
-        if pg.query_selector('.dmg') and len(list(SHOTS.glob('05_hit*'))) < 4: pg.screenshot(path=str(SHOTS / f'05_hit{len(list(SHOTS.glob("05_hit*")))}.png'))
+        for sel, nm, k in [('.std-cut.on', '05_cut', 2), ('.std-dmg', '06_hit', 4), ('.std-go.ko', '07_ko', 1)]:
+            if pg.query_selector(sel) and len(list(SHOTS.glob(nm + '*'))) < k: print(nm, pg.evaluate("[document.querySelector('#stage').className, getComputedStyle(document.querySelector('#app')).opacity, !!document.querySelector('.std-hud'), MB.BT && MB.BT.turn]")); pg.screenshot(path=str(SHOTS / f'{nm}{len(list(SHOTS.glob(nm + "*")))}.png'))
     ok = play(pg, "MB.VS && MB.VS.phase === 'end' && !!document.querySelector('.std-win.on')", shot=shot)
     check(ok, '対戦が 最後まで 進んで 勝利画面')
-    if shots: pg.wait_for_timeout(1500); pg.screenshot(path=str(SHOTS / '06_win.png'))
+    if shots: pg.wait_for_timeout(1500); pg.screenshot(path=str(SHOTS / '08_win.png'))
     check(pg.evaluate("localStorage.getItem('manabi_battle_save') === null"), 'まなびバトルの セーブを 作っていない')
     btn = [x.inner_text() for x in pg.query_selector_all('.sw-btns button')]
     check(len(btn) == 3, f'勝利画面の ボタンは3つ {btn}')

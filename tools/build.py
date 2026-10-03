@@ -30,6 +30,11 @@ PATCHES = [
      "if (e.cut) { lastSk = e.sk; lastSubj = e.subj; hitN = 0; if (e.sk === 'ガードバッシュ' || e.sk === 'カウンター') se('guard'); if (window.STD && STD.on && S && S.stadium) await STD.cast(e, () => cutin(e.cut, 1100)); else await cutin(e.cut, 1100); continue; }"),
     ("if (tEl) { tEl.classList.remove('hit'); void tEl.offsetWidth; tEl.classList.add('hit'); }\n",
      "if (tEl) { tEl.classList.remove('hit'); void tEl.offsetWidth; tEl.classList.add('hit'); }\n        if (window.STD && STD.on && S && S.stadium) STD.hit(e, lastSk, lastSubj);\n"),
+    # BGM：タイトル以外は ずっと バトルの曲（アイテムえらびも）
+    ("    bgm(cls === 'title' || cls === 'name' ? 'title'", "    if (S && S.stadium) bgm(cls === 'title' ? 'title' : 'vs'); else bgm(cls === 'title' || cls === 'name' ? 'title'"),
+    # わざの打ちあいは 3Dで（ルーレット・教科・わざ・問題は まなびバトルの画面のまま）
+    ("    }\n    hideGauges();\n    const ev = resolveTurn(order, turn, false);\n", "    }\n    hideGauges();\n    const hp0 = { P: P.hp, B: B.hp };\n    const ev = resolveTurn(order, turn, false);\n"),
+    ("    saveVs();\n    await playEvents(ev);\n", "    saveVs();\n    if (window.STD && STD.on && S && S.stadium && STD.ok()) { await STD.fight(ev, stdFightData(hp0, turn)); updBars(); } else await playEvents(ev);\n"),
     # はじめ：タイトル（まなびバトルの セーブは 読まない）
     ("  preload().then(() => {\n    S = load();\n    if (S) titleScreen(); else startNew();\n  });\n",
      "@@FLOW@@\n  preload().then(() => {\n    S = stdS();\n    if (STDX.on && STDX.init) STDX.init();\n    stdTitle();\n  });\n"),

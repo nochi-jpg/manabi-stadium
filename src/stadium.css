@@ -13,7 +13,7 @@
 #stdui::before,#stdui::after{content:"";position:absolute;left:0;right:0;height:0;background:#000;transition:height .6s}
 #stdui::before{top:0}#stdui::after{bottom:0}
 #stdui.letter::before,#stdui.letter::after{height:56px}
-.std-skip{position:absolute;right:18px;top:8px;z-index:3;font-size:18px!important;padding:6px 16px!important;opacity:.8}
+.std-skip{position:absolute;right:18px;bottom:112px;z-index:3;font-size:18px!important;padding:6px 16px!important;opacity:.8}
 /* 実況テロップ */
 .std-telop{position:absolute;left:150px;right:150px;bottom:20px;height:78px;border-radius:18px;background:linear-gradient(180deg,rgba(15,25,70,.94),rgba(30,15,60,.94));border:4px solid #ffe066;display:flex;align-items:center;gap:20px;padding:0 24px;opacity:0;transform:translateY(30px);transition:.35s;z-index:2}
 .std-telop.on{opacity:1;transform:none}
@@ -70,3 +70,45 @@
 .sw-hp{font-size:18px;color:#fff;background:rgba(0,0,0,.5);padding:4px 16px;border-radius:10px}
 .sw-btns{display:flex;gap:16px;margin-top:6px}
 .sw-btns button{font-size:24px!important;padding:12px 22px!important}
+/* わざの打ちあい（3D）*/
+.std-fighting #app{pointer-events:none}
+.std-hud{position:absolute;left:0;right:0;top:14px;height:90px;display:flex;align-items:flex-start;justify-content:center;gap:14px;opacity:0;transform:translateY(-30px);transition:.4s}
+.std-hud.on{opacity:1;transform:none}
+.hb{width:520px;display:flex;flex-direction:column;gap:4px}
+.hb-nm{display:flex;align-items:baseline;gap:10px;color:#fff;text-shadow:0 3px 0 #000}
+.hb-nm b{font-size:28px}.hb-nm small{font-size:18px;color:#cfd8ff}
+.hb.b .hb-nm{flex-direction:row-reverse}
+.hb-bar{position:relative;height:30px;border:4px solid #fff;border-radius:6px;background:rgba(0,0,0,.65);overflow:hidden;transform:skewX(-14deg);box-shadow:0 4px 0 rgba(0,0,0,.4)}
+.hb.b .hb-bar{transform:skewX(14deg)}
+.hb-bar i{position:absolute;top:0;bottom:0;left:0}
+.hb.b .hb-bar i{left:auto;right:0}
+.hb-hp{background:linear-gradient(180deg,#fff36b,#fab005);transition:width .15s}
+.hb.a .hb-hp{background:linear-gradient(180deg,#99e9f2,#1c7ed6)}
+.hb.b .hb-hp{background:linear-gradient(180deg,#ffc9c9,#e03131)}
+.hb.low .hb-hp{animation:hblow .5s infinite alternate}
+@keyframes hblow{to{filter:brightness(1.6)}}
+.hb-dmg{background:#fff;transition:width .7s .45s}
+.hb-num{font-size:18px;color:#fff;text-shadow:0 2px 0 #000}
+.hb.b .hb-num{text-align:right}
+.hb-turn{width:120px;text-align:center;color:#ffe066;font-size:20px;font-weight:900;text-shadow:0 3px 0 #000;line-height:1}
+.hb-turn b{display:block;font-size:56px;color:#fff;-webkit-text-stroke:4px #3b1d8f;paint-order:stroke}
+.std-telop em{font-style:normal;color:#ffe066}
+.std-cut{position:absolute;left:-200px;right:-200px;top:230px;height:250px;transform:skewY(-7deg) scaleY(0);background:linear-gradient(90deg,rgba(0,0,0,.85),var(--c) 50%,rgba(0,0,0,.85));border-top:7px solid #fff;border-bottom:7px solid #fff;transition:transform .22s;overflow:hidden}
+.std-cut.on{transform:skewY(-7deg) scaleY(1)}
+.std-cut::before{content:"";position:absolute;inset:0;background:repeating-linear-gradient(90deg,rgba(255,255,255,.2) 0 6px,transparent 6px 70px);animation:stdspd .3s linear infinite}
+@keyframes stdspd{to{background-position:-140px 0}}
+.std-cut img{position:absolute;top:-40px;height:330px;image-rendering:pixelated;transition:transform .4s cubic-bezier(.2,.9,.2,1)}
+.std-cut.a img{left:300px;transform:skewY(7deg) translateX(-700px)}
+.std-cut.b img{right:300px;transform:skewY(7deg) translateX(700px) scaleX(-1)}
+.std-cut.a.on img{transform:skewY(7deg)}.std-cut.b.on img{transform:skewY(7deg) scaleX(-1)}
+.std-cut div{position:absolute;top:60px;display:flex;flex-direction:column;transition:transform .4s .08s cubic-bezier(.2,.9,.2,1)}
+.std-cut.a div{right:300px;align-items:flex-end;transform:skewY(7deg) translateX(700px)}
+.std-cut.b div{left:300px;align-items:flex-start;transform:skewY(7deg) translateX(-700px)}
+.std-cut.on div{transform:skewY(7deg)}
+.std-cut b{font-size:88px;font-weight:900;color:#fff;-webkit-text-stroke:8px #0b1d50;paint-order:stroke;line-height:1.1}
+.std-cut small{font-size:30px;color:#fff;background:rgba(0,0,0,.5);padding:2px 14px;border-radius:999px}
+.std-dmg{position:absolute;transform:translate(-50%,-50%);font-size:96px;font-weight:900;color:#fff;-webkit-text-stroke:8px #c92a2a;paint-order:stroke;animation:stddmg 1.5s forwards;text-align:center;line-height:1}
+.std-dmg small{display:block;font-size:34px;color:#ffe066;-webkit-text-stroke:5px #862e9c}
+.std-dmg.crit{font-size:120px;-webkit-text-stroke-color:#862e9c}
+@keyframes stddmg{0%{transform:translate(-50%,-50%) scale(2.4)}12%{transform:translate(-50%,-50%) scale(.9)}20%{transform:translate(-50%,-50%) scale(1.05)}80%{transform:translate(-50%,-80%) scale(1);opacity:1}100%{transform:translate(-50%,-100%);opacity:0}}
+.std-go.ko{font-size:170px;-webkit-text-stroke-color:#862e9c;color:#ffe066}

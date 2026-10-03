@@ -45,11 +45,22 @@
     return t;
   }
 
+  // 画面に うつる大きさ × 画面のこまかさ（電子黒板で 1280×720 を引きのばして ぼやけないように）
+  function pixRatio() {
+    const st = document.querySelector('#stage'), k = st ? st.getBoundingClientRect().width / W : 1;
+    const r = (window.devicePixelRatio || 1) * (k || 1);
+    return LIGHT ? clamp(r * 0.6, 0.6, 1) : clamp(r, 1, 2);
+  }
+  function resize() {
+    if (renderer) renderer.setPixelRatio(pixRatio());
+    if (fx) { const r = LIGHT ? 1 : clamp(pixRatio(), 1, 2); fx.width = W * r; fx.height = H * r; }
+  }
+  addEventListener('resize', () => setTimeout(resize, 50));
   // ---------- 3D の世界 ----------
   const W3 = {};
   function build3D() {
     renderer = new THREE.WebGLRenderer({ antialias: !LIGHT, powerPreference: 'high-performance', alpha: false });
-    renderer.setPixelRatio(LIGHT ? 0.75 : Math.min(window.devicePixelRatio || 1, 1.5));
+    renderer.setPixelRatio(pixRatio());
     renderer.setSize(W, H, false);
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.1;
@@ -175,6 +186,16 @@
     }
     W3.vision.needsUpdate = true;
   }
+  // 進化の段階（絵の _1〜_4）で 大きさを かえる
+  const SZ = { 1: 0.62, 2: 0.8, 3: 0.95, 4: 1.12 };
+  const stageOfArt = art => { const m = /_(\d)\.png/.exec(imgSrc(art)); return m ? +m[1] : 3; };
+  function setMons(o) {
+    W3.mon.forEach((x, i) => {
+      const f = i ? o.B : o.A;
+      if (x.src !== f.art) { x.mat.map = monsterTex(f.art, f.emo, !!i); x.mat.needsUpdate = true; x.src = f.art; }
+      x.sz = SZ[stageOfArt(f.art)] || 0.95; x.lean = 0; x.kb = 0; x.flick = 0; x.ko = 0; x.home = i ? 6 : -6;
+    });
+  }
   function makeMon(x, color) {
     const g = new THREE.Group();
     const mat = new THREE.MeshBasicMaterial({ transparent: true, alphaTest: 0.4, toneMapped: false });
@@ -278,8 +299,11 @@
       m.pillar.material.opacity = u < 0 ? 0 : u < 1 ? 0.35 * ease(u * 2) : 0.35 * Math.max(0, 1 - (u - 1) * 0.9);
       m.ring.material.opacity = u > 0 ? 0.8 * ease(u) : 0; m.ring.rotation.z += dt * 0.8;
       const bob = Math.sin(t * 2.2 + i * 2) * 0.12, br = 1 + Math.sin(t * 2.2 + i * 2) * 0.025;
-      m.body.position.y = 2.6 + bob; m.body.scale.set(2 - br, br, 1);
-      m.g.position.x = m.home + m.lean * (i ? -1 : 1);
+      const z = m.sz || 1; m.body.position.y = 2.6 * z + bob; m.body.scale.set((2 - br) * z, br * z, 1); m.sh.scale.set(1.2 * z, 0.7 * z, 1); m.ring.scale.setScalar(Math.max(0.8, z));
+      m.kb = (m.kb || 0) * Math.pow(0.03, dt);
+      m.g.position.x = m.home + m.lean * (i ? -1 : 1) + m.kb * (i ? 1 : -1);
+      if (m.flick > 0) { m.flick -= dt; m.body.visible = Math.floor(m.flick * 20) % 2 === 0; m.mat.color.setRGB(1, 0.5, 0.5); } else { m.body.visible = true; m.mat.color.setRGB(1, 1, 1); }
+      if (m.ko) { m.ko = Math.min(1, m.ko + dt * 0.9); m.holder.position.y -= dt * 0; m.body.rotation.z = (i ? 1 : -1) * ease(m.ko) * 1.4; m.body.position.y -= ease(m.ko) * 1.6 * z; } else m.body.rotation.z = 0;
       m.holder.rotation.y = Math.atan2(camera.position.x - m.g.position.x, camera.position.z - m.g.position.z);
     });
     // 衝撃波
@@ -367,17 +391,23 @@
     step();
   }
   function flashScreen(color = '#fff', op = 0.8) {
-    const f = $('#stdflash'); if (!f) return; f.style.background = color; f.style.transition = 'none'; f.style.opacity = op;
-    requestAnimationFrame(() => requestAnimationFrame(() => { f.style.transition = 'opacity .45s'; f.style.opacity = 0; }));
+    const f = $('#stdflash'); if (!f) return; f.style.background = color;
+    const t0 = performance.now(), id = (f._id = (f._id || 0) + 1);
+    const step = () => { if (f._id !== id) return; const u = (performance.now() - t0) / 450; f.style.opacity = u >= 1 ? 0 : op * (1 - u); if (u < 1) setTimeout(step, 16); };
+    step();
   }
 
   // ---------- わざの演出（game.js の playEvents から）----------
   // cut：わざの名前が出るとき（ためる → とばす）。e = { sk, subj, by }
   STD.cast = async function (e, cutinFn) {
-    const th = TH[e.subj] || THX, by = e.by || 'P', to = by === 'P' ? 'B' : 'P';
-    const a = posOf(by), b = posOf(to), big = e.sk === 'パワーシュート';
+    const by = e.by || 'P', to = by === 'P' ? 'B' : 'P';
     W3.exBase = 0.7; W3.excite = Math.max(W3.excite, 0.8);
-    const charge = (async () => {
+    await Promise.all([cutinFn(), chargeFx(posOf(by), posOf(to), e)]);
+  };
+  // ためる → とばす（a：わざを出す方、b：受ける方。画面の上の位置）
+  async function chargeFx(a, b, e) {
+    const th = TH[e.subj] || THX, big = e.sk === 'パワーシュート';
+    {
       ring(a.x, a.y, th.c[0], big ? 160 : 110, 0.6, 12);
       for (let i = 0; i < 8; i++) {
         if (FAST()) break;
@@ -389,12 +419,12 @@
       const n = e.sk === '連続攻撃' ? 2 : 1;
       for (let j = 0; j < n; j++) { P({ k: 'orb', sx: a.x, sy: a.y, tx: b.x, ty: b.y, x: a.x, y: a.y, life: 0.32, size: big ? 26 : 16, color: th.c[0] }); if (n > 1) await wait(120); }
       if (big) { flashScreen(th.c[0], 0.35); W3.punch = 1; }
-    })();
-    await Promise.all([cutinFn(), charge]);
-  };
+    }
+  }
   // hit：ダメージが出るとき。e = { side（受けた方）, crit, eff, hit }
-  STD.hit = function (e, sk, subj) {
-    const th = TH[subj] || THX, p = posOf(e.side), by = e.side === 'P' ? 'B' : 'P', a = posOf(by);
+  STD.hit = function (e, sk, subj) { hitFx(posOf(e.side), posOf(e.side === 'P' ? 'B' : 'P'), e, sk, subj); };
+  function hitFx(p, a, e, sk, subj) {
+    const th = TH[subj] || THX, by = e.side === 'P' ? 'B' : 'P';
     const k = (e.crit ? 1.6 : 1) * (sk === 'パワーシュート' ? 1.5 : sk === '連続攻撃' ? 0.7 : 1) * (e.eff > 1 ? 1.2 : 1);
     burst(p.x, p.y, 60 * k, 900 * k, th.c); ring(p.x, p.y, '#ffffff', 150 * k, 0.45, 12); ring(p.x, p.y, th.c[0], 220 * k, 0.6, 8);
     glyphs(p.x, p.y, th, 10 * k, 700);
@@ -412,12 +442,12 @@
     if (e.crit) flashScreen('#ffffff', 0.75); else if (sk === 'パワーシュート') flashScreen('#ffffff', 0.5);
     shakeScreen(e.crit ? 18 : sk === 'パワーシュート' ? 16 : 9);
     if (ready) { W3.shake = e.crit ? 0.5 : 0.25; W3.flash.intensity = e.crit ? 6 : 3; W3.flash.color.set(th.c[0]); W3.excite = 1.2; }
-  };
+  }
 
   // ---------- 画面の背景（game.js の render から）----------
   STD.bgFor = function (cls, el) {
     el.style.background = cls === 'btl' ? 'linear-gradient(rgba(8,10,24,.05),rgba(8,10,24,.25))' : cls === 'title' ? 'transparent' : 'linear-gradient(rgba(8,10,24,.62),rgba(8,10,24,.78))';
-    if (mode !== 'intro' && mode !== 'win') setMode(cls === 'btl' ? 'battle' : 'title');
+    if (mode !== 'intro' && mode !== 'win' && mode !== 'fight') setMode(cls === 'btl' ? 'battle' : 'title');
   };
   function setMode(m) {
     if (mode === m) return;
@@ -437,7 +467,7 @@
     sk.onclick = () => (skip = true);
     const W8 = async ms => { const t1 = performance.now() + (FAST() ? ms / 50 : ms); while (!skip && performance.now() < t1) await new Promise(r => setTimeout(r, 30)); };
     const m = W3.mon;
-    m[0].mat.map = monsterTex(o.A.art, o.A.emo, false); m[1].mat.map = monsterTex(o.B.art, o.B.emo, true); m.forEach(x => { x.mat.needsUpdate = true; x.g.visible = true; x.t0 = 1e9; x.lean = 0; });
+    setMons(o); m.forEach(x => { x.g.visible = true; x.t0 = 1e9; });
     const imA = new Image(), imB = new Image(); imA.src = dataOf(imgSrc(o.A.art)); imB.src = dataOf(imgSrc(o.B.art));
     W3.spots.forEach(s => (s.intensity = 0)); W3.exBase = 0.45;
     drawVision('logo');
@@ -500,13 +530,135 @@
     setMode('battle');
   };
 
+  // ---------- わざの打ちあい（3D）----------
+  // ルーレット・教科・わざ・問題は まなびバトルの画面。そのあとの 打ちあいだけ ここで見せる
+  // ev：game.js の resolveTurn が作った できごと。o = { A, B（art・emo・nameH・pnameH・maxhp・hp）, turn }
+  function proj(x, y, z) { const v = new THREE.Vector3(x, y, z).project(camera); return { x: (v.x + 1) / 2 * W, y: (1 - v.y) / 2 * H }; }
+  const monTop = i => { const m = W3.mon[i], z = m.sz || 1; return proj(m.g.position.x, 2.6 * z, 0); };
+  function telopOn(txt) {
+    let t = $('.std-telop', ui); if (!t) { t = document.createElement('div'); t.className = 'std-telop'; ui.appendChild(t); }
+    t.innerHTML = `<span>じっきょう</span><b>${txt}</b>`; t.classList.remove('on'); void t.offsetWidth; t.classList.add('on');
+  }
+  const pick1 = a => a[(Math.random() * a.length) | 0];
+  STD.fight = async function (ev, o) {
+    setMode('fight');
+    let skip = false;
+    const W8 = async ms => { const t1 = performance.now() + (FAST() ? ms / 50 : ms); while (!skip && performance.now() < t1) await new Promise(r => setTimeout(r, 30)); };
+    const m = W3.mon, st = $('#stage');
+    setMons(o);
+    m.forEach(x => { x.g.visible = true; x.t0 = now() - 5; });
+    W3.spots.forEach(s => (s.intensity = 4)); W3.exBase = 0.7;
+    W3.beamTo = i => new THREE.Vector3(i % 2 ? 6 : -6, 0, 0);
+    st.classList.add('std-fighting'); $('#app').style.visibility = 'hidden';
+    // 格闘ゲームの 体力ゲージ
+    const hp = { P: o.A.hp, B: o.B.hp };
+    const hud = document.createElement('div'); hud.className = 'std-hud';
+    const side = (f, k) => `<div class="hb ${k}"><div class="hb-nm"><b>${f.nameH}</b><small>${f.pnameH}</small></div><div class="hb-bar"><i class="hb-dmg"></i><i class="hb-hp"></i></div><div class="hb-num"></div></div>`;
+    hud.innerHTML = `${side(o.A, 'a')}<div class="hb-turn">TURN<b>${o.turn}</b></div>${side(o.B, 'b')}`;
+    ui.appendChild(hud);
+    const setHP = snap => {
+      if (snap) { hp.P = snap.P.hp; hp.B = snap.B.hp; }
+      [['a', 'P', o.A], ['b', 'B', o.B]].forEach(([k, s, f]) => {
+        const r = clamp(hp[s] / f.maxhp, 0, 1) * 100, el = $('.hb.' + k, hud);
+        el.querySelector('.hb-hp').style.width = r + '%'; el.querySelector('.hb-dmg').style.width = r + '%';
+        el.querySelector('.hb-num').textContent = `${Math.max(0, Math.round(hp[s]))} / ${f.maxhp}`; el.classList.toggle('low', r < 30);
+      });
+    };
+    setHP(); requestAnimationFrame(() => hud.classList.add('on'));
+    const sk = document.createElement('button'); sk.className = 'std-skip'; sk.textContent = 'スキップ ▶▶'; ui.appendChild(sk); sk.onclick = () => (skip = true);
+    // ひいた画面から
+    setShot([0, 12, 30], [0, 2.5, 0], 0.01); drift([0, 4.2, 19], [0, 2.4, 0], 1.2);
+    telopOn(pick1([`ターン${o.turn}！ わざの 打ちあいだ！`, `ターン${o.turn}！ さあ、どうなる！？`]));
+    await W8(1300);
+    let atk = -1, sk1 = null, subj = null, hits = 0;
+    const back = async () => { if (atk < 0) return; const x = m[atk], t0 = performance.now(); const l0 = x.lean; while (performance.now() - t0 < (FAST() ? 10 : 450)) { x.lean = l0 * (1 - easeOut((performance.now() - t0) / 450)); await new Promise(r => setTimeout(r, 16)); } x.lean = 0; };
+    for (const e of ev) {
+      if (e.cut) {
+        await back();
+        atk = e.by === 'B' ? 1 : 0; sk1 = e.sk; subj = e.subj; hits = 0;
+        const f = atk ? o.B : o.A, ax = m[atk].home, sg = atk ? 1 : -1, th = TH[subj] || THX, z = m[atk].sz || 1;
+        if (sk1 === 'ガードバッシュ' || sk1 === 'カウンター') window.STD_SE && window.STD_SE('guard');
+        // ためる：わざを出す方に よる
+        setShot([ax * 0.45, 1.6 + z, 6.5 + z * 2], [ax, 2.3 * z, 0], skip ? 0.01 : 0.55); drift([ax * 0.6, 1.4 + z, 5.5 + z * 2], [ax, 2.4 * z, 0], 1.6);
+        telopOn(`${f.nameH}の <em>${sk1}</em>！（${subj}）`);
+        const cut = document.createElement('div'); cut.className = 'std-cut ' + (atk ? 'b' : 'a');
+        cut.style.setProperty('--c', th.c[0]);
+        cut.innerHTML = `<img src="${dataOf(imgSrc(f.art)) || ''}" alt=""><div><b>${sk1}！</b><small>${subj}</small></div>`;
+        ui.appendChild(cut); requestAnimationFrame(() => cut.classList.add('on'));
+        window.STD_SE && window.STD_SE('thunder');
+        await W8(550);
+        const a2 = monTop(atk), b2 = monTop(1 - atk);
+        chargeFx(a2, b2, e);
+        await W8(650);
+        cut.classList.remove('on'); setTimeout(() => cut.remove(), 300);
+        // とびこむ：かたごしの カメラ
+        window.STD_SE && window.STD_SE('wind');
+        setShot([ax * 2, 2.0, 5.5], [-ax * 0.67, 2.5, 0], skip ? 0.01 : 0.3);
+        const t0 = performance.now(), D = sk1 === 'かんつう' ? 10 : 8.2;
+        while (!skip && performance.now() - t0 < (FAST() ? 10 : 380)) { m[atk].lean = D * Math.pow((performance.now() - t0) / 380, 2); await new Promise(r => setTimeout(r, 16)); }
+        m[atk].lean = D;
+        continue;
+      }
+      if (e.hit) {
+        hits++;
+        const ti = e.side === 'B' ? 1 : 0, tx = m[ti].home, f = ti ? o.B : o.A;
+        window.STD_SE && window.STD_SE(e.crit ? 'crit' : sk1 === '連続攻撃' ? (hits === 1 ? 'combo' : 'hit') : 'hit');
+        if (atk < 0) atk = 1 - ti;
+        // 受けた方を 正面から
+        const sw = rand(-1, 1) * 2;
+        setShot([tx * 0.35 + sw, 2.6, 9.5], [tx, 2.4, 0], skip ? 0.01 : 0.12); drift([tx * 0.15 + sw * 2, 4.2, 14.5], [tx * 0.7, 2.4, 0], 1.4);
+        await W8(60);
+        const p = monTop(ti), a = monTop(atk);
+        hitFx(p, a, e, sk1, subj);
+        m[ti].kb = e.crit ? 3 : 1.8; m[ti].flick = 0.6;
+        W3.shock.position.x = tx; W3.shockT = 0; W3.punch = e.crit ? 1 : 0.5;
+        const d = document.createElement('div'); d.className = 'std-dmg' + (e.crit ? ' crit' : '');
+        d.innerHTML = `${e.crit ? '<small>かいしん！</small>' : ''}${e.hit}`; d.style.left = p.x + 'px'; d.style.top = (p.y - 40) + 'px';
+        ui.appendChild(d); setTimeout(() => d.remove(), FAST() ? 20 : 1500);
+        setHP(e.snap);
+        const fl = e.crit ? 'かいしんの いちげき！！' : e.eff > 1 ? 'こうかは ばつぐんだ！' : e.eff < 1 ? 'いまひとつの ようだ…' : e.hit >= f.maxhp * 0.3 ? 'これは 大きい！' : pick1(['きまった！', 'ヒット！', 'いい一撃！']);
+        telopOn(`${f.nameH}に <em>${e.hit}</em> ダメージ！ ${fl}`);
+        await W8(e.crit ? 1500 : 1150);
+        continue;
+      }
+      // 状態異常・回復などの おしらせ
+      if (e.stt) window.STD_SE && window.STD_SE(e.stt);
+      setHP(e.snap);
+      setShot([rand(-4, 4), 5, 18], [0, 2.4, 0], skip ? 0.01 : 0.6);
+      telopOn(e.t);
+      await W8(1400);
+    }
+    await back();
+    // 決着がついたら KO
+    const ko = hp.P <= 0 ? 0 : hp.B <= 0 ? 1 : -1;
+    if (ko >= 0 && !(hp.P <= 0 && hp.B <= 0)) {
+      const kx = m[ko].home;
+      skip = false;
+      setShot([kx * 0.4, 2.2, 10], [kx, 1.6, 0], 0.4);
+      m[ko].ko = 0.001; window.STD_SE && window.STD_SE('crit'); W3.shake = 0.6; W3.excite = 1.5;
+      const k = document.createElement('div'); k.className = 'std-go ko'; k.textContent = 'K.O.!'; ui.appendChild(k);
+      flashScreen('#fff', 0.7);
+      telopOn(`${(ko ? o.B : o.A).nameH}は たおれた！`);
+      await W8(1900); k.remove();
+    } else {
+      setShot([0, 7, 24], [0, 2.4, 0], skip ? 0.01 : 0.8);
+      telopOn(o.turn >= 3 ? '3ターン しゅうりょう！' : 'つぎの ターンへ！');
+      await W8(1100);
+    }
+    // まなびバトルの画面に もどる
+    hud.classList.remove('on'); setTimeout(() => hud.remove(), 400);
+    sk.remove(); const t = $('.std-telop', ui); if (t) t.remove();
+    st.classList.remove('std-fighting'); $('#app').style.visibility = '';
+    m.forEach(x => { x.ko = 0; x.lean = 0; });
+    setMode('battle');
+  };
+
   // ---------- 勝利 ----------
   // w = 'P' | 'B' | 'draw'
   STD.win = async function (w, o) {
     setMode('win'); PS.length = 0;
     const m = W3.mon;
-    m[0].mat.map = monsterTex(o.A.art, o.A.emo, false); m[1].mat.map = monsterTex(o.B.art, o.B.emo, true);
-    m.forEach(x => { x.mat.needsUpdate = true; x.lean = 0; });
+    setMons(o);
     const show = w === 'draw' ? [0, 1] : [w === 'P' ? 0 : 1];
     m.forEach((x, i) => { x.g.visible = show.includes(i); x.t0 = now(); x.home = show.length === 1 ? 0 : i ? 4 : -4; });
     W3.spots.forEach((s, i) => { s.intensity = show.includes(i) ? 7 : 0; s.position.set(m[i].home, 20, 6); s.target.position.set(m[i].home, 0, 0); });
@@ -526,10 +678,10 @@
   STD.init = function () {
     const st = $('#stage'), app = $('#app');
     gl = document.createElement('div'); gl.id = 'stdgl'; st.insertBefore(gl, app);
-    fx = document.createElement('canvas'); fx.id = 'stdfx'; const k = LIGHT ? 1 : 1.5; fx.width = W * k; fx.height = H * k; st.appendChild(fx); fxc = fx.getContext('2d');
+    fx = document.createElement('canvas'); fx.id = 'stdfx'; fx.width = W; fx.height = H; st.appendChild(fx); fxc = fx.getContext('2d');
     ui = document.createElement('div'); ui.id = 'stdui'; ui.innerHTML = '<div id="stdflash"></div>'; st.appendChild(ui);
     if (/[?&]fps/.test(location.search)) { const f = document.createElement('div'); f.id = 'stdfps'; st.appendChild(f); }
-    try { build3D(); ready = true; } catch (e) { console.warn('3Dが うごきません', e); st.classList.add('no3d'); ready = false; }
+    try { build3D(); ready = true; resize(); } catch (e) { console.warn('3Dが うごきません', e); st.classList.add('no3d'); ready = false; }
     // 字が よみこまれたら フィールドと ビジョンを かきなおす
     if (ready && document.fonts) document.fonts.ready.then(() => { drawField(W3.fieldTex.userData.canvas.getContext('2d'), 1024, 1024); W3.fieldTex.needsUpdate = true; drawVision(visionMode); });
     requestAnimationFrame(frame);
