@@ -1,4 +1,4 @@
-# まなびスタジアム 引き継ぎメモ（10/4 時点・ver 0.4.1）
+# まなびスタジアム 引き継ぎメモ（10/4 時点・ver 0.4.2）
 
 先生だけが起動して、電子黒板の大画面で まなびバトルの対戦を上映するアプリ。まなびバトル（nochi-jpg/manabi-battle）の第3作。
 **戦闘の仕様・画面の配置は まなびバトルと 完全に同じ**（子どもが とまどわないように）。演出だけ豪華にする。
@@ -6,7 +6,7 @@
 ## リポジトリと作業場所
 - このリポジトリ（nochi-jpg/manabi-stadium）＋ となりに `manabi-battle`（公開）と `manabi-battle-assets`（非公開）を clone
 - `python3 tools/build.py` → `dist/`（`dist/index.html` を開くと動く・gitignore）
-- `python3 tools/build_html.py` → `manabi-stadium.html`（1ファイル版・約24MB。画像・音・フォントを中に入れる。BGMは48kbpsモノラル。ffmpeg が必要。gitignore）
+- `python3 tools/build_html.py` → `manabi-stadium.html`（1ファイル版・約24MB。画像・音・フォントを中に入れる。ひらいたら data: を blob: に かえる（innerHTML が 重くならないように）。BGMは48kbpsモノラル。ffmpeg が必要。gitignore）
 - 公開版：`python3 ../manabi-battle/tools/publish.py stadium` → nochi-jpg/manasuta（暗号化した1ファイル版。https://nochi-jpg.github.io/manasuta/）。たのまれたときだけ
 - `python3 tools/build.py --zip` → `manabi-stadium.zip`（Teams配信用。**たのまれたときだけ**）
 - 素材は まなびバトルの非公開リポジトリを そのまま使う（素材入りのものは このリポジトリに入れない）
@@ -22,6 +22,7 @@
 - `src/stadium.js`：3D（Three.js r186・`lib/three.iife.js`）と 2Dエフェクト。`STD.intro`（入場）・`STD.cast`/`STD.hit`（わざ）・`STD.win`（勝利・花吹雪）
 - `src/stadium.css`：まなびバトルの見た目の上に かさねる
 - file:// では 画像ファイルを WebGL に わたせないので、3Dのモンスターは `dist/std_img.js`（data URL）を使う
+- 全画面：タイトルの「⛶ 全画面」スイッチ（localStorage `manabi_stadium_full`）。オンなら タップのたびに 全画面に もどす
 - かるいモード：タイトルの「⚡ かるいモード」スイッチ（localStorage `manabi_stadium_light`・切りかえると よみこみなおす）か URL に `?light`。画面のこまかさ0.6倍・観客へらす・光のすじなし・エフェクト半分／`?fps`：FPS表示
 - 3Dが動かないPCでは ふつうの まなびバトルの対戦画面で動く
 

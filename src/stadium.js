@@ -36,7 +36,7 @@
     const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4; t.userData.canvas = c; return t;
   }
   const imgSrc = html => { const m = /src="([^"]+)"/.exec(html || ''); return m ? m[1] : ''; };
-  const dataOf = src => (src && src.startsWith('data:') ? src : '') || (window.STD_IMG && src && (window.STD_IMG[src] || window.STD_IMG[src.replace(/^.*?(images\/)/, '$1')])) || '';
+  const dataOf = src => (src && /^(data|blob):/.test(src) ? src : '') || (window.STD_IMG && src && (window.STD_IMG[src] || window.STD_IMG[src.replace(/^.*?(images\/)/, '$1')])) || '';
   function monsterTex(art, emo, flip) {
     const d = dataOf(imgSrc(art));
     let t;

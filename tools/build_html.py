@@ -29,9 +29,10 @@ html = re.sub(r'(<link rel="(?:icon|apple-touch-icon)"[^>]*href=")images/player/
 local_js = (D / 'assets.local.js').read_text()
 paths = sorted({p for p in set(PATH.findall(local_js)) | set(PATH.findall((D / 'assets.js').read_text())) if exists(p)} | {f'images/player/{p.name}' for p in (D / 'images/player').glob('*.png')})
 emb = {p: data_uri(p) for p in paths}
-fix = '<script>(function(){const E=window.__EMB,w=o=>{for(const k in o){const v=o[k];if(typeof v==="string"&&E[v])o[k]=E[v];else if(v&&typeof v==="object")w(v);}};w(window.ASSETS||{});})();</script>'
 logo = D / '..' / '..' / 'manabi-battle-assets' / 'stadium' / 'logo.png'
-std_img = 'window.STD_IMG={' + (f'logo:"data:image/png;base64,{base64.b64encode(logo.read_bytes()).decode()}"' if logo.exists() else '') + '};for(const k in window.__EMB)if(k.startsWith("images/player/"))window.STD_IMG[k]=window.__EMB[k];'
+if logo.exists(): emb['stadium/logo.png'] = 'data:image/png;base64,' + base64.b64encode(logo.read_bytes()).decode()
+fix = '<script>(function(){/* data: を blob: に（innerHTML に 長い文字が 入らないように＝画面の切りかえが かるくなる）。画像は 先に デコードしておく */const E=window.__EMB,K=window.__KEEP=[];for(const k in E){const v=E[k],c=v.indexOf(\',\'),t=v.slice(5,v.indexOf(\';\')),b=atob(v.slice(c+1)),u=new Uint8Array(b.length);for(let j=0;j<b.length;j++)u[j]=b.charCodeAt(j);E[k]=URL.createObjectURL(new Blob([u],{type:t}));if(t.startsWith(\'image/\')){const im=new Image();im.src=E[k];if(im.decode)im.decode().catch(()=>{});K.push(im);}}const w=o=>{for(const k in o){const v=o[k];if(typeof v==="string"&&E[v])o[k]=E[v];else if(v&&typeof v==="object")w(v);}};w(window.ASSETS||{});})();</script>'
+std_img = 'window.STD_IMG={logo:window.__EMB["stadium/logo.png"]};for(const k in window.__EMB)if(k.startsWith("images/player/"))window.STD_IMG[k]=window.__EMB[k];'
 def script(m):
     name = m.group(1)
     if name == 'assets.local.js': return '<script>window.__EMB=' + js(json.dumps(emb, ensure_ascii=False)) + ';</script>\n<script>' + js(local_js) + '</script>\n' + fix

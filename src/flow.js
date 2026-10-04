@@ -4,11 +4,20 @@
   // ・対戦の ルール・画面は まなびバトルと 同じ（vsTurn などを そのまま使う）
   // ・まなびバトルの セーブ（manabi_battle_save）には さわらない
   // =====================================================================
-  const STD_VERSION = '0.4.1';
+  const STD_VERSION = '0.4.2';
   const STDX = window.STD || { on: false, ok: () => false };
   const stdS = () => ({ stadium: true, owned: Object.keys(D.ITEM), fav: [], sel: { tempo: 'fast' }, debug: null, pname: '先生', qs: {}, st: {} });
   window.STD_SE = k => se(k);
   if (!D.CREDITS.some(c => c[0] === 'Three.js')) D.CREDITS.push(['Three.js', 'three.js authors', '3Dのスタジアム', 'MIT License']);
+  // 全画面（PC・電子黒板でも）。オンにすると このPCに おぼえて、タップのたびに 全画面でなければ もどす（Esc で ぬけても 次のタップで もどる）
+  const FULL_KEY = 'manabi_stadium_full';
+  const stdFull = () => { try { return localStorage.getItem(FULL_KEY) === '1'; } catch (e) { return false; } };
+  function stdFsEnter() {
+    if (fsEl() || !fsCan() || window.FAST) return;
+    const d = document.documentElement;
+    try { const p = d.requestFullscreen ? d.requestFullscreen({ navigationUI: 'hide' }) : d.webkitRequestFullscreen(); if (p && p.catch) p.catch(() => {}); } catch (e) { }
+  }
+  document.addEventListener('pointerup', () => { if (stdFull()) stdFsEnter(); }, true);
   function stdTitle() {
     BT = null;
     if (STDX.endWin) try { STDX.endWin(); } catch (e) { }
@@ -16,10 +25,11 @@
       <div class="st-logo">${window.STD_IMG && STD_IMG.logo ? `<img src="${STD_IMG.logo}" alt="まなびスタジアム">` : '<b>まなびスタジアム</b>'}</div>
       <div class="st-sub">せんせいの とうぎじょう</div>
       <button class="btn-main st-mode" id="m1">🆚 1vs1モード</button>
-      <div class="st-row"><button class="btn-gray st-cred" id="lt">⚡ かるいモード：<b>${STDX.light ? 'オン' : 'オフ'}</b></button><button class="btn-gray st-cred" id="cr">📜 クレジット</button></div>
+      <div class="st-row"><button class="btn-gray st-cred" id="fs">⛶ 全画面：<b>${stdFull() ? 'オン' : 'オフ'}</b></button><button class="btn-gray st-cred" id="lt">⚡ かるいモード：<b>${STDX.light ? 'オン' : 'オフ'}</b></button><button class="btn-gray st-cred" id="cr">📜 クレジット</button></div>
       <div class="st-ver">ver ${STD_VERSION}（まなびバトル ver ${K.VERSION}）　ディレクション・ゲームデザイン・企画 K.nom</div></div>`, 'title');
     $('#m1', el).onclick = () => stdVs();
     $('#cr', el).onclick = () => creditsPage();
+    $('#fs', el).onclick = () => { const on = !stdFull(); try { localStorage.setItem(FULL_KEY, on ? '1' : '0'); } catch (e) { } if (on) stdFsEnter(); else fsExit(); $('#fs b', el).textContent = on ? 'オン' : 'オフ'; };
     $('#lt', el).onclick = async () => {
       const on = !STDX.light;
       const c = await dialog({ who: '⚡', text: on ? 'かるいモードに するよ。\n画面の こまかさ・観客・エフェクトを へらして、うごきを かるくするよ。\n（このPCに おぼえておくよ。いちど よみこみなおすよ）' : 'ふつうのモードに もどすよ。\n（いちど よみこみなおすよ）', choices: [{ label: on ? '⚡ かるいモードにする' : 'ふつうに もどす', val: 1, cls: 'btn-main' }, { label: 'やめる', val: 0, cls: 'btn-gray' }] });
