@@ -7,6 +7,7 @@
 - このリポジトリ（nochi-jpg/manabi-stadium）＋ となりに `manabi-battle`（公開）と `manabi-battle-assets`（非公開）を clone
 - `python3 tools/build.py` → `dist/`（`dist/index.html` を開くと動く・gitignore）
 - `python3 tools/build_html.py` → `manabi-stadium.html`（1ファイル版・約24MB。画像・音・フォントを中に入れる。BGMは48kbpsモノラル。ffmpeg が必要。gitignore）
+- 公開版：`python3 ../manabi-battle/tools/publish.py stadium` → nochi-jpg/manasuta（暗号化した1ファイル版。https://nochi-jpg.github.io/manasuta/）。たのまれたときだけ
 - `python3 tools/build.py --zip` → `manabi-stadium.zip`（Teams配信用。**たのまれたときだけ**）
 - 素材は まなびバトルの非公開リポジトリを そのまま使う（素材入りのものは このリポジトリに入れない）
 - 変更したら コミット＆プッシュ。まなびバトル側を かえたときは そちらの「守ること」に従う
@@ -47,7 +48,7 @@
 - 職場PC（電子黒板）で サンプルが 60FPS（10/3）
 
 ## テスト
-- `python3 tools/std_test.py [--html]`（--html：1ファイル版を テスト）：QRを2まい作る → 1vs1を3試合（同じアイテム・えらびなおし・タイトル）。まなびバトルのセーブを作らないか も見る
+- `python3 tools/std_test.py [--html]`（--html：1ファイル版を テスト、--file=パス：そのファイルを テスト）：QRを2まい作る → 1vs1を3試合（同じアイテム・えらびなおし・タイトル）。まなびバトルのセーブを作らないか も見る
 - `python3 tools/std_test.py --shots`：演出つきで1試合して `tools/_shots/` に スクショ（ソフトの3Dなので とても遅い）
 
 ## 先生（ユーザー）の好み
