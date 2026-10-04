@@ -127,3 +127,6 @@
 .scr.res .prog ~ .panel{bottom:110px!important}
 /* まなびバトルの「対戦画面の背景を ぼかして暗く」を 消す（3Dスタジアムが ぼやけて暗くなるため） */
 .scr.btl::before{display:none!important}
+/* パス（こうさん）：わざをえらぶ画面の 右下 */
+.std-passrow{display:flex;justify-content:flex-end;margin-top:10px}
+.std-pass{font-size:20px!important;padding:8px 18px!important}

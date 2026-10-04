@@ -4,7 +4,7 @@
   // ・対戦の ルール・画面は まなびバトルと 同じ（vsTurn などを そのまま使う）
   // ・まなびバトルの セーブ（manabi_battle_save）には さわらない
   // =====================================================================
-  const STD_VERSION = '0.3.2';
+  const STD_VERSION = '0.4.0';
   const STDX = window.STD || { on: false, ok: () => false };
   const stdS = () => ({ stadium: true, owned: Object.keys(D.ITEM), fav: [], sel: { tempo: 'fast' }, debug: null, pname: '先生', qs: {}, st: {} });
   window.STD_SE = k => se(k);
@@ -93,7 +93,7 @@
         if (!BT) BT = hydrate(V.bt);
         battleScreen();
         while (BT.phase === 'turn') await vsTurn();
-        V.result = BT.result; V.phase = 'end'; saveVs(); continue;
+        V.result = BT.result; V.pass = BT.pass || null; V.phase = 'end'; saveVs(); continue;
       }
       if (V.phase === 'end') {
         if (!BT) BT = hydrate(V.bt);
@@ -101,7 +101,7 @@
         const head = res === 'draw' ? '🤝 引き分け！' : `🏆 プレイヤー${res === 'P' ? 'A' : 'B'}　${esc(wf.pname)}さんの 勝ち！`;
         const el = render(`<div class="std-win">
           <div class="sw-head">${STDX.gt ? STDX.gt(head.replace(/^🏆 |^🤝 /, ''), 'gd') : head}</div>
-          ${res === 'draw' ? '' : `<div class="sw-nm">${esc(wf.name)}</div>`}
+          ${res === 'draw' ? '' : `<div class="sw-nm">${esc(wf.name)}${V.pass ? '　<span class="sm">（🏳️ あいての こうさん）</span>' : ''}</div>`}
           <div class="sw-hp">${esc(P.name)} HP ${Math.max(0, R0(P.hp))}／${P.maxhp}　　${esc(B.name)} HP ${Math.max(0, R0(B.hp))}／${B.maxhp}</div>
           <div class="sw-btns">
             <button class="btn-main" id="w1">🔁 同じアイテムで 再戦</button>
@@ -116,7 +116,7 @@
         if (c === 'w3') { clearVs(); return stdTitle(); }
         if (c === 'w2') { V.last = { a: V.picks.a, b: V.picks.b }; V.picks = { a: [], b: [] }; V.phase = 'pickA'; }
         else V.phase = 'intro';
-        V.bt = null; V.result = null; BT = null; saveVs(); continue;
+        V.bt = null; V.result = null; V.pass = null; BT = null; saveVs(); continue;
       }
       clearVs(); return stdTitle();
     }

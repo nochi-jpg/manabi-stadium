@@ -161,7 +161,7 @@
     const cv = document.createElement('canvas'); cv.width = 640; cv.height = 256;
     const tex = new THREE.CanvasTexture(cv); tex.colorSpace = THREE.SRGBColorSpace; tex.minFilter = THREE.LinearMipmapLinearFilter;
     const cg = cv.getContext('2d'); let left = 10;
-    CROWD_ART.forEach((src, i) => { const d = dataOf(src); if (!d) { left--; return; } const im = new Image(); im.onload = () => { cg.drawImage(im, (i % 5) * 128, ((i / 5) | 0) * 128, 128, 128); if (--left <= 0) tex.needsUpdate = true; }; im.src = d; });
+    CROWD_ART.forEach((src, i) => { const d = dataOf(src); if (!d) { left--; return; } const im = new Image(); im.onload = () => { cg.drawImage(im, (i % 5) * 128 + 6, ((i / 5) | 0) * 128 + 6, 116, 116); if (--left <= 0) tex.needsUpdate = true; }; im.src = d; });
     const ok = CROWD_ART.some(src => dataOf(src));
     W3.crowdU = { uTime: { value: 0 }, uEx: { value: 0.4 }, uProj: { value: 600 }, uTex: { value: tex }, uOk: { value: ok ? 1 : 0 } };
     const mat = new THREE.ShaderMaterial({
@@ -173,8 +173,9 @@
       fragmentShader: `uniform sampler2D uTex; uniform float uOk; varying vec3 vD; varying float vB;
         void main(){ vec2 uv = gl_PointCoord; if (vD.z > 0.5) uv.x = 1.0 - uv.x;
           if (uOk < 0.5) { if (abs(uv.x - 0.5) > 0.22) discard; gl_FragColor = vec4(vec3(0.3 + 0.4 * fract(vD.x * 0.37)) * vB, 1.0); return; }
-          float k = vD.x; vec2 a = (vec2(mod(k, 5.0), floor(k / 5.0)) + vec2(uv.x, uv.y)) / vec2(5.0, 2.0);
-          vec4 c = texture2D(uTex, vec2(a.x, 1.0 - a.y)); if (c.a < 0.5) discard; gl_FragColor = vec4(c.rgb * vB, 1.0);
+          float k = floor(vD.x + 0.5), row = floor((k + 0.5) / 5.0), col = k - row * 5.0; // 小数の ずれで となりの絵に ならないように
+          vec2 a = (vec2(col, row) + clamp(uv, 0.03, 0.97)) / vec2(5.0, 2.0);
+          vec4 c = texture2D(uTex, vec2(a.x, 1.0 - a.y)); if (c.a < 0.4) discard; gl_FragColor = vec4(c.rgb * vB, 1.0);
           #include <colorspace_fragment>
         }`,
     });
@@ -316,7 +317,7 @@
   function frame(nowMs) {
     requestAnimationFrame(frame);
     const dt = Math.min(0.05, (nowMs - last) / 1000); last = nowMs;
-    const t = (nowMs - T0) / 1000;
+    const t = STD._freezeT !== undefined ? STD._freezeT : (nowMs - T0) / 1000; // テスト用：時間を止める
     if (ready && !document.hidden) {
       updateWorld(t, dt); updateCam(t, dt); renderer.render(scene, camera);
     }
