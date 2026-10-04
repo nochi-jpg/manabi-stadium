@@ -4,7 +4,7 @@
   // ・対戦の ルール・画面は まなびバトルと 同じ（vsTurn などを そのまま使う）
   // ・まなびバトルの セーブ（manabi_battle_save）には さわらない
   // =====================================================================
-  const STD_VERSION = '0.4.0';
+  const STD_VERSION = '0.4.1';
   const STDX = window.STD || { on: false, ok: () => false };
   const stdS = () => ({ stadium: true, owned: Object.keys(D.ITEM), fav: [], sel: { tempo: 'fast' }, debug: null, pname: '先生', qs: {}, st: {} });
   window.STD_SE = k => se(k);
@@ -16,10 +16,15 @@
       <div class="st-logo">${window.STD_IMG && STD_IMG.logo ? `<img src="${STD_IMG.logo}" alt="まなびスタジアム">` : '<b>まなびスタジアム</b>'}</div>
       <div class="st-sub">せんせいの とうぎじょう</div>
       <button class="btn-main st-mode" id="m1">🆚 1vs1モード</button>
-      <button class="btn-gray st-cred" id="cr">📜 クレジット</button>
+      <div class="st-row"><button class="btn-gray st-cred" id="lt">⚡ かるいモード：<b>${STDX.light ? 'オン' : 'オフ'}</b></button><button class="btn-gray st-cred" id="cr">📜 クレジット</button></div>
       <div class="st-ver">ver ${STD_VERSION}（まなびバトル ver ${K.VERSION}）　ディレクション・ゲームデザイン・企画 K.nom</div></div>`, 'title');
     $('#m1', el).onclick = () => stdVs();
     $('#cr', el).onclick = () => creditsPage();
+    $('#lt', el).onclick = async () => {
+      const on = !STDX.light;
+      const c = await dialog({ who: '⚡', text: on ? 'かるいモードに するよ。\n画面の こまかさ・観客・エフェクトを へらして、うごきを かるくするよ。\n（このPCに おぼえておくよ。いちど よみこみなおすよ）' : 'ふつうのモードに もどすよ。\n（いちど よみこみなおすよ）', choices: [{ label: on ? '⚡ かるいモードにする' : 'ふつうに もどす', val: 1, cls: 'btn-main' }, { label: 'やめる', val: 0, cls: 'btn-gray' }] });
+      if (c) STDX.setLight(on);
+    };
   }
   async function stdVs() {
     let V = loadVs();

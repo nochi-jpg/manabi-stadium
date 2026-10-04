@@ -130,3 +130,5 @@
 /* パス（こうさん）：わざをえらぶ画面の 右下 */
 .std-passrow{display:flex;justify-content:flex-end;margin-top:10px}
 .std-pass{font-size:20px!important;padding:8px 18px!important}
+.st-row{display:flex;gap:14px}
+.st-cred b{color:#f08a1c}

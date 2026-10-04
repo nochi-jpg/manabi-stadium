@@ -6,7 +6,9 @@
 (function () {
   'use strict';
   const W = 1280, H = 720;
-  const LIGHT = /[?&]light/.test(location.search);
+  // かるいモード：タイトルの スイッチ（このPCに おぼえる）か URL の ?light
+  const LIGHT_KEY = 'manabi_stadium_light';
+  const LIGHT = /[?&]light/.test(location.search) || (() => { try { return localStorage.getItem(LIGHT_KEY) === '1'; } catch (e) { return false; } })();
   const FAST = () => !!window.FAST;
   const $ = (s, r = document) => r.querySelector(s);
   const rand = (a, b) => a + Math.random() * (b - a);
@@ -105,7 +107,7 @@
     const band = new THREE.Mesh(new THREE.CylinderGeometry(15.95, 15.95, 0.35, 96, 1, true), new THREE.MeshBasicMaterial({ color: 0x66e0ff, side: THREE.DoubleSide, toneMapped: false }));
     band.position.y = WALL - 0.3; scene.add(band);
     // お客さん
-    const crowd = (W3.crowd = []), sp = LIGHT ? 1.2 : 0.85;
+    const crowd = (W3.crowd = []), sp = LIGHT ? 1.5 : 0.85;
     for (let i = 0; i < ROWS; i++) {
       const r = R0 + i * SR + 0.7, y = WALL + i * SH, n = Math.floor((Math.PI * 2 * r) / sp);
       for (let k = 0; k < n; k++) {
@@ -132,7 +134,7 @@
       const head = new THREE.Mesh(new THREE.BoxGeometry(4, 2.5, 1), new THREE.MeshBasicMaterial({ color: 0xffffee, toneMapped: false }));
       head.position.set(Math.cos(a) * r, 24.5, Math.sin(a) * r); head.lookAt(0, 0, 0); scene.add(head);
       const pivot = new THREE.Object3D(); pivot.position.copy(head.position); scene.add(pivot);
-      const cone = new THREE.Mesh(new THREE.ConeGeometry(4.5, 60, 24, 1, true), W3.beamMat); cone.rotation.x = -Math.PI / 2; cone.position.z = 30; pivot.add(cone);
+      const cone = new THREE.Mesh(new THREE.ConeGeometry(4.5, 60, 24, 1, true), W3.beamMat); cone.rotation.x = -Math.PI / 2; cone.position.z = 30; cone.visible = !LIGHT; pivot.add(cone); // かるいモードは 光のすじ なし（重ねぬりが 重い）
       W3.beams.push({ pivot, target: V(0, 0, 0) });
     }
     // 大型ビジョン
@@ -739,4 +741,5 @@
   STD.ok = () => ready;
   if (!window.THREE) { STD.on = false; } // three がないときは ふつうの まなびバトルの見た目
   STD.light = LIGHT;
+  STD.setLight = on => { try { localStorage.setItem(LIGHT_KEY, on ? '1' : '0'); } catch (e) { } location.reload(); };
 })();
