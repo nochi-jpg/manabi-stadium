@@ -34,15 +34,15 @@
     const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4; t.userData.canvas = c; return t;
   }
   const imgSrc = html => { const m = /src="([^"]+)"/.exec(html || ''); return m ? m[1] : ''; };
-  const dataOf = src => (window.STD_IMG && src && (window.STD_IMG[src] || window.STD_IMG[src.replace(/^.*?(images\/)/, '$1')])) || '';
+  const dataOf = src => (src && src.startsWith('data:') ? src : '') || (window.STD_IMG && src && (window.STD_IMG[src] || window.STD_IMG[src.replace(/^.*?(images\/)/, '$1')])) || '';
   function monsterTex(art, emo, flip) {
     const d = dataOf(imgSrc(art));
     let t;
     if (d) {
-      const c = document.createElement('canvas'); c.width = c.height = 1024;
+      const c = document.createElement('canvas'); c.width = c.height = 768; // 大きさは かえない（WebGL は あとから大きさを かえられない）
       t = new THREE.CanvasTexture(c); t.anisotropy = 8; t.minFilter = THREE.LinearMipmapLinearFilter; t.magFilter = THREE.LinearFilter;
       const im = new Image();
-      im.onload = () => { const g = c.getContext('2d'), k = Math.max(1, Math.floor(1024 / Math.max(im.width, im.height))); c.width = im.width * k; c.height = im.height * k; g.imageSmoothingEnabled = false; g.drawImage(im, 0, 0, c.width, c.height); t.needsUpdate = true; };
+      im.onload = () => { const g = c.getContext('2d'); g.clearRect(0, 0, 768, 768); g.imageSmoothingEnabled = false; g.drawImage(im, 0, 0, 768, 768); t.needsUpdate = true; };
       im.src = d;
     }
     else t = canvasTex(256, 256, (g) => { g.font = '200px serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(emo || '❓', 128, 140); });

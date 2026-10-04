@@ -7,7 +7,7 @@ from playwright.sync_api import sync_playwright
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 MB = ROOT.parent / 'manabi-battle'
 BOT = (MB / 'tools/play_test.py').read_text().split('BOT = """')[1].split('"""')[0]
-URL = (ROOT / 'dist/index.html').as_uri()
+URL = (ROOT / ('manabi-stadium.html' if '--html' in sys.argv else 'dist/index.html')).as_uri()
 SHOTS = ROOT / 'tools/_shots'
 GL = ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--autoplay-policy=no-user-gesture-required']
 errors, fails = [], []
