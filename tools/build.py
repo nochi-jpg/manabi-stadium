@@ -38,19 +38,9 @@ PATCHES = [
     # まちがえたときの 解説は 1秒で 自動で 消える（テンポを上げる）
     ("          await wait(2500); nb.disabled = false;\n          await new Promise(r => (nb.onclick = r));\n",
      "          if (S && S.stadium) await wait(1000); else { await wait(2500); nb.disabled = false;\n          await new Promise(r => (nb.onclick = r)); }\n"),
-    # パス（こうさん）：スタジアムだけ。わざをえらぶ画面に いつでも出す
-    ("        }).join('')}</div></div>`, 'ovb');\n      o.querySelectorAll('button').forEach(b => (b.onclick = () => { o.remove(); res(b.dataset.k); }));\n",
-     "        }).join('')}</div>${S && S.stadium && BT.vs ? '<div class=\"std-passrow\"><button class=\"btn-gray std-pass\" data-pass=\"1\">🏳️ パス（こうさん）</button></div>' : ''}</div>`, 'ovb');\n"
-     "      o.querySelectorAll('button').forEach(b => (b.onclick = async () => {\n"
-     "        if (b.dataset.pass) { o.style.display = 'none'; const c = await dialog({ who: '🏳️', text: `${esc(P.pname)}さん、ほんとうに こうさんする？\\n<span class=\"sm\">パスすると、この試合は 負けになるよ</span>`, choices: [{ label: '🏳️ こうさんする', val: 1, cls: 'btn-main' }, { label: 'やめる', val: 0, cls: 'btn-gray' }] }); if (!c) { o.style.display = ''; return; } o.remove(); res('__pass'); return; }\n"
-     "        o.remove(); res(b.dataset.k); }));\n"),
-    ("      const sk = await playerSkill(P);\n      const subj = await playerSubj(P, B, turn);\n",
-     "      const sk = await playerSkill(P);\n      if (sk === '__pass') return { pass: true };\n      const subj = await playerSubj(P, B, turn);\n"),
-    ("      await playerAct(x, x.opp, turn, i === 0, K.VS_Q);\n",
-     "      const pa = await playerAct(x, x.opp, turn, i === 0, K.VS_Q);\n"
-     "      if (pa && pa.pass) { hideGauges(); BT.acts = {}; BT.phase = 'end'; BT.result = x.opp.side; BT.pass = x.side; saveVs(); const el = $(x.side === 'P' ? '#fP' : '#fB'); if (el) el.classList.add('bye'); await cutin(`🏳️ ${esc(x.pname)}さん（${esc(x.name)}）は こうさんした！`, 1800); return; }\n"),
+    # パス（こうさん）：まなびバトル ver 1.4.0 から 本体に 入った（対戦・とうぎじょう）ので 差しかえは いらない（10/7）
     # はじめ：タイトル（まなびバトルの セーブは 読まない）
-    ("  preload().then(() => {\n    S = load();\n    if (S) titleScreen(); else startNew();\n  });\n",
+    ("  preload().then(() => {\n    S = load();\n    const go = () => { if (S) titleScreen(); else startNew(); };\n    if (IN_FRAME && !window.FAST) splash(go); else go();\n  });\n",
      "@@FLOW@@\n  preload().then(() => {\n    S = stdS();\n    if (STDX.on && STDX.init) STDX.init();\n    stdTitle();\n  });\n"),
 ]
 

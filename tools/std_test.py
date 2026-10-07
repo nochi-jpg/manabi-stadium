@@ -86,18 +86,18 @@ with sync_playwright() as p:
         # パス（こうさん）：つぎの試合で Aが さいしょの わざえらびで パス → Bの勝ち
         pg.click('#w1'); pg.wait_for_timeout(300)
         for _ in range(3000):
-            if pg.query_selector('.std-pass'): break
+            if pg.query_selector('.passb'): break
             if pg.evaluate("document.body.innerText.includes('画面を見て')") and not pg.query_selector('.ov'):
                 pg.evaluate("document.querySelector('.scr') && document.querySelector('.scr').click()")
             elif not pg.query_selector('.skb'): pg.evaluate(BOT, 0.7)
             pg.wait_for_timeout(25)
         who = pg.evaluate("MB.BT && MB.BT.firstId")
-        check(pg.query_selector('.std-pass') is not None, 'わざえらびに パスボタン')
-        pg.evaluate("document.querySelector('.std-pass').click()"); pg.wait_for_timeout(200)
+        check(pg.query_selector('.passb') is not None, 'わざえらびに パスボタン')
+        pg.evaluate("document.querySelector('.passb').click()"); pg.wait_for_timeout(200)
         check('こうさん' in pg.inner_text('.ov:last-of-type'), 'パス → こうさんの かくにん')
         pg.evaluate("[...document.querySelectorAll('.ov button')].find(b => b.textContent.includes('やめる')).click()"); pg.wait_for_timeout(200)
         check(pg.query_selector('.skb') is not None, 'やめる → わざえらびに もどる')
-        pg.evaluate("document.querySelector('.std-pass').click()"); pg.wait_for_timeout(200)
+        pg.evaluate("document.querySelector('.passb').click()"); pg.wait_for_timeout(200)
         pg.evaluate("[...document.querySelectorAll('.ov button')].find(b => b.textContent.includes('こうさんする')).click()")
         ok = play(pg, "MB.VS && MB.VS.phase === 'end' && !!document.querySelector('.std-win.on')", n=400)
         check(ok and pg.evaluate("MB.VS.result") == ('B' if who == 'P' else 'P') and pg.evaluate("MB.VS.pass") == who, f'こうさんした方の 負け（{who}）')
