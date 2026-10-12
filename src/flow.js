@@ -26,7 +26,7 @@
       <div class="st-sub">せんせいの とうぎじょう</div>
       <button class="btn-main st-mode" id="m1">🆚 1vs1モード</button>
       <div class="st-row"><button class="btn-gray st-cred" id="fs">⛶ 全画面：<b>${stdFull() ? 'オン' : 'オフ'}</b></button><button class="btn-gray st-cred" id="lt">⚡ かるいモード：<b>${STDX.light ? 'オン' : 'オフ'}</b></button><button class="btn-gray st-cred" id="cr">📜 クレジット</button></div>
-      <div class="st-ver">ver ${STD_VERSION}（まなびバトル ver ${K.VERSION}）　ディレクション・ゲームデザイン・企画 K.nom</div></div>`, 'title');
+      <div class="st-ver">ver ${STD_VERSION}（まなびバトル ver ${K.VERSION}）　企画・ゲームデザイン・キャラクターデザイン K.N</div></div>`, 'title');
     $('#m1', el).onclick = () => stdVs();
     $('#cr', el).onclick = () => creditsPage();
     $('#fs', el).onclick = () => { const on = !stdFull(); try { localStorage.setItem(FULL_KEY, on ? '1' : '0'); } catch (e) { } if (on) stdFsEnter(); else fsExit(); $('#fs b', el).textContent = on ? 'オン' : 'オフ'; };
