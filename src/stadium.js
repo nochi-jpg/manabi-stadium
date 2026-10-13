@@ -220,8 +220,8 @@
   }
   const LOGO = (() => { const d = window.STD_IMG && window.STD_IMG.logo; if (!d) return null; const im = new Image(); im.onload = () => { if (W3.vision && visionMode === 'logo') drawVision('logo'); }; im.src = d; return im; })();
   // 進化の段階（絵の _1〜_4）で 大きさを かえる
-  const SZ = { 1: 0.62, 2: 0.8, 3: 0.95, 4: 1.12 };
-  const stageOfArt = art => { const m = /_(\d)\.png/.exec(imgSrc(art)); return m ? +m[1] : 3; };
+  const SZ = { 0: 0.5, 1: 0.62, 2: 0.85, 3: 1.1 }; // 10/14：第3段階が 最終進化（_4 は なくなった）。単細胞は 0
+  const stageOfArt = art => { const src = imgSrc(art) || ''; if (/tansaibou/.test(src)) return 0; const m = /_(\d)\.(png|webp)/.exec(src); return m ? +m[1] : 3; };
   function setMons(o) {
     W3.mon.forEach((x, i) => {
       const f = i ? o.B : o.A;
@@ -632,6 +632,8 @@
         // ためる：わざを出す方に よる
         setShot([ax * 0.45, 1.6 + z, 6.5 + z * 2], [ax, 2.3 * z, 0], skip ? 0.01 : 0.55); drift([ax * 0.6, 1.4 + z, 5.5 + z * 2], [ax, 2.4 * z, 0], 1.6);
         telopOn(`${f.nameH}の <em>${sk1}</em>！（${subj}）`);
+        // 効いた アイテム（まなびバトルの カットインの 2行目と 同じ 文。10/14）
+        const it2 = /<div class="cut2">([\s\S]*?)<\/div>/.exec(e.cut || '');
         const cut = document.createElement('div'); cut.className = 'std-cut ' + (atk ? 'b' : 'a');
         cut.style.setProperty('--c', th.c[0]);
         cut.innerHTML = `<img src="${dataOf(imgSrc(f.art)) || ''}" alt=""><div><b>${gt(sk1 + '！')}</b><small>${subj}</small></div>`;
@@ -641,6 +643,7 @@
         const a2 = monTop(atk), b2 = monTop(1 - atk);
         chargeFx(a2, b2, e);
         await W8(650);
+        if (it2) { telopOn(it2[1]); await W8(1100); }
         cut.classList.remove('on'); setTimeout(() => cut.remove(), 300);
         // とびこむ：かたごしの カメラ
         window.STD_SE && window.STD_SE('wind');
@@ -668,15 +671,16 @@
         ui.appendChild(d); setTimeout(() => d.remove(), FAST() ? 20 : 1500);
         setHP(e.snap);
         const fl = e.crit ? 'かいしんの いちげき！！' : e.eff > 1 ? 'こうかは ばつぐんだ！' : e.eff < 1 ? 'いまひとつの ようだ…' : e.hit >= f.maxhp * 0.3 ? 'これは 大きい！' : pick1(['きまった！', 'ヒット！', 'いい一撃！']);
-        telopOn(`${f.nameH}に <em>${e.hit}</em> ダメージ！ ${fl}`);
+        telopOn(`${f.nameH}に <em>${e.hit}</em> ダメージ！ ${fl}${e.note ? `<small>（${e.note}）</small>` : ''}`);
         await W8(e.crit ? 1500 : 1150);
         continue;
       }
       // 状態異常・回復などの おしらせ
       if (e.stt) window.STD_SE && window.STD_SE(e.stt);
+      if (e.block) window.STD_SE && window.STD_SE('guard');
       setHP(e.snap);
       setShot([rand(-4, 4), 5, 18], [0, 2.4, 0], skip ? 0.01 : 0.6);
-      telopOn(e.t);
+      telopOn(e.block ? `🛡️ ${e.t}` : e.t);
       await W8(1400);
     }
     await back();

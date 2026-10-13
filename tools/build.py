@@ -24,10 +24,10 @@ PATCHES = [
     ("    if (bg) el.style.background = `${shade(cls === 'btl' || cls === 'dun' ? 0.2 : 0.35)}, url(\"${bg}\") center/cover`;\n",
      "    if (bg) el.style.background = `${shade(cls === 'btl' || cls === 'dun' ? 0.2 : 0.35)}, url(\"${bg}\") center/cover`;\n    if (window.STD && STD.on && S && S.stadium) STD.bgFor(cls, el);\n"),
     # わざの 教科と だれのわざか を 演出に わたす
-    ("ev.push({ sk: act.sk, cut:", "ev.push({ sk: act.sk, subj: act.subj, by: x.side, cut:"),
+    ("const cut = { sk: act.sk, cut:", "const cut = { sk: act.sk, subj: act.subj, by: x.side, cut:"),
     ("    let lastSk = null, hitN = 0;\n", "    let lastSk = null, hitN = 0, lastSubj = null;\n"),
-    ("if (e.cut) { lastSk = e.sk; hitN = 0; if (e.sk === 'ガードバッシュ' || e.sk === 'カウンター') se('guard'); await cutin(e.cut, 1100); continue; }",
-     "if (e.cut) { lastSk = e.sk; lastSubj = e.subj; hitN = 0; if (e.sk === 'ガードバッシュ' || e.sk === 'カウンター') se('guard'); if (window.STD && STD.on && S && S.stadium) await STD.cast(e, () => cutin(e.cut, 1100)); else await cutin(e.cut, 1100); continue; }"),
+    ("if (e.cut) { lastSk = e.sk; hitN = 0; if (e.sk === 'ガードバッシュ' || e.sk === 'カウンター') se('guard'); itFx(e.fx); await cutin(e.cut, 1100); continue; }",
+     "if (e.cut) { lastSk = e.sk; lastSubj = e.subj; hitN = 0; if (e.sk === 'ガードバッシュ' || e.sk === 'カウンター') se('guard'); itFx(e.fx); if (window.STD && STD.on && S && S.stadium) await STD.cast(e, () => cutin(e.cut, 1100)); else await cutin(e.cut, 1100); continue; }"),
     ("if (tEl) { tEl.classList.remove('hit'); void tEl.offsetWidth; tEl.classList.add('hit'); }\n",
      "if (tEl) { tEl.classList.remove('hit'); void tEl.offsetWidth; tEl.classList.add('hit'); }\n        if (window.STD && STD.on && S && S.stadium) STD.hit(e, lastSk, lastSubj);\n"),
     # BGM：タイトル以外は ずっと バトルの曲（アイテムえらびも）
