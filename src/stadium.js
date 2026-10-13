@@ -221,7 +221,8 @@
   const LOGO = (() => { const d = window.STD_IMG && window.STD_IMG.logo; if (!d) return null; const im = new Image(); im.onload = () => { if (W3.vision && visionMode === 'logo') drawVision('logo'); }; im.src = d; return im; })();
   // 進化の段階（絵の _1〜_4）で 大きさを かえる
   const SZ = { 0: 0.5, 1: 0.62, 2: 0.85, 3: 1.1 }; // 10/14：第3段階が 最終進化（_4 は なくなった）。単細胞は 0
-  const stageOfArt = art => { const src = imgSrc(art) || ''; if (/tansaibou/.test(src)) return 0; const m = /_(\d)\.(png|webp)/.exec(src); return m ? +m[1] : 3; };
+  let EMB_REV = null; const pathOf = src => { if (!/^blob:/.test(src) || !window.__EMB) return src; if (!EMB_REV) { EMB_REV = {}; for (const k in window.__EMB) EMB_REV[window.__EMB[k]] = k; } return EMB_REV[src] || src; }; // 1ファイル版は blob: → もとの 場所に もどして 見る（10/14）
+  const stageOfArt = art => { const src = pathOf(imgSrc(art) || ''); if (/tansaibou/.test(src)) return 0; const m = /_(\d)\.(png|webp)/.exec(src); return m ? +m[1] : 3; };
   function setMons(o) {
     W3.mon.forEach((x, i) => {
       const f = i ? o.B : o.A;
