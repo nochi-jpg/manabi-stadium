@@ -693,7 +693,8 @@
       await W8(1900); k.remove();
     } else {
       setShot([0, 9, 21], [0, 2.4, 0], skip ? 0.01 : 0.8);
-      telopOn(o.turn >= 3 ? '3ターン しゅうりょう！' : 'つぎの ターンへ！');
+      const LT = (window.DATA && DATA.K.VS_T) || 5; // 10/13：対戦は 5ターン
+      telopOn(o.turn >= LT ? `${LT}ターン しゅうりょう！` : 'つぎの ターンへ！');
       await W8(1100);
     }
     // まなびバトルの画面に もどる
