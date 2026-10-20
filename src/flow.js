@@ -4,7 +4,7 @@
   // ・対戦の ルール・画面は まなびバトルと 同じ（vsTurn などを そのまま使う）
   // ・まなびバトルの セーブ（manabi_battle_save）には さわらない
   // =====================================================================
-  const STD_VERSION = '0.5.2';
+  const STD_VERSION = '0.6.0';
   const STDX = window.STD || { on: false, ok: () => false };
   const stdS = () => ({ stadium: true, owned: Object.keys(D.ITEM), fav: [], sel: { tempo: 'fast' }, debug: null, pname: '先生', qs: {}, st: {} });
   window.STD_SE = k => se(k);
@@ -65,7 +65,7 @@
   function stdFightData(hp0, turn) {
     const { P, B } = BT;
     const one = (f, h) => ({ art: f.art, emo: f.emo, nameH: esc(f.name), pnameH: esc(f.pname), maxhp: f.maxhp, hp: h });
-    return { A: one(P, hp0.P), B: one(B, hp0.B), turn };
+    return { A: one(P, hp0.P), B: one(B, hp0.B), turn, end: endT() };
   }
   async function stdRun() {
     for (;;) {
@@ -73,7 +73,7 @@
       if (V.phase === 'scanA' || V.phase === 'scanB') {
         const w = V.phase === 'scanA' ? 'a' : 'b';
         render('<div class="scr center"><div style="font-size:120px">🆚</div></div>', 'res');
-        const pr = await scanQR(`🆚 プレイヤー${AB[w]}の QRコードを 読みこんでね`, 'まなびバトルの「QR」ボタンで 出したQRコードを、カメラに見せてね');
+        const pr = await scanQR(`🆚 プレイヤー${AB[w]}の QRコードを 読みこんでね`, 'まなびバトルの「QR」ボタンで 出したQRコードを、カメラに見せてね', { newOnly: true });
         if (!pr) { clearVs(); return stdTitle(); }
         V.prof[w] = pr; V.phase = w === 'a' ? 'scanB' : 'confirm'; saveVs(); continue;
       }
@@ -87,12 +87,12 @@
         const w = V.phase === 'pickA' ? 'a' : 'b', o = w === 'a' ? 'B' : 'A', pr = V.prof[w];
         await tapScreen(`プレイヤー${AB[w]}（${esc(pr.pname)}）だけ<br>画面を見てください`, `プレイヤー${o}は 後ろを向いてね。画面をタップしてね`);
         const preset = V.picks[w].length ? V.picks[w] : V.last ? V.last[w] : [];
-        V.picks[w] = await pickItems(pr, preset.filter(n => pr.owned.includes(n)));
+        V.picks[w] = await pickItems(pr, preset.filter(n => pr.owned.includes(n)), { skPreset: (V.sks || {})[w] || pr.skSel }); V.sks = V.sks || {}; V.sks[w] = pickItems.sk || null;
         V.phase = w === 'a' ? 'pickB' : 'intro'; saveVs(); continue;
       }
       if (V.phase === 'intro') {
         await tapScreen('みんなで 画面を見てね！', 'プレイヤーAも Bも 前を向いてね。画面をタップしてね');
-        V.bt = { vs: true, bgVs: pick(BOSS5), cfg: { P: vsCfg(V.prof.a, V.picks.a), B: vsCfg(V.prof.b, V.picks.b) }, snap: null, turn: 1, firstId: null, acts: {}, used: [], phase: 'turn', result: null };
+        V.bt = { vs: true, bgVs: pick(BOSS5), cfg: { P: vsCfg(V.prof.a, V.picks.a, (V.sks || {}).a), B: vsCfg(V.prof.b, V.picks.b, (V.sks || {}).b) }, snap: null, turn: 1, firstId: null, acts: {}, used: [], phase: 'turn', result: null };
         BT = hydrate(V.bt); BT.snap = dynAll(); V.phase = 'battle'; saveVs();
         if (STDX.ok()) {
           render('<div></div>', 'btl').style.background = 'transparent';

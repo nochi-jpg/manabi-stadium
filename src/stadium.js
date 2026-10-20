@@ -698,7 +698,7 @@
       await W8(1900); k.remove();
     } else {
       setShot([0, 9, 21], [0, 2.4, 0], skip ? 0.01 : 0.8);
-      const LT = (window.DATA && DATA.K.VS_T) || 5; // 10/13：対戦は 5ターン
+      const LT = o.end || (window.DATA && DATA.K.VS_T) || 5; // 10/13：対戦は 5ターン（銀時計で 6）
       telopOn(o.turn >= LT ? `${LT}ターン しゅうりょう！` : 'つぎの ターンへ！');
       await W8(1100);
     }
