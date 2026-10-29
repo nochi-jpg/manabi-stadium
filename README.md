@@ -8,4 +8,4 @@
 - `lib/three.iife.js`：Three.js r186（MIT）を script タグで読める形にしたもの（`tools/bundle_three.py`）
 - 職場PC（電子黒板）で 60FPS を確認（10/3）
 
-企画・ゲームデザイン・キャラクターデザイン のち（まなび堂）
+企画・ゲームデザイン・キャラクターデザイン K.nomura
